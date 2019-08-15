@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -68,4 +71,15 @@ func GetFileOrFolderInfo(fileOrFolderPath string) (int32, int64, os.FileInfo, er
 func ClearPath(fileOrFolderPath string) string {
 	fileOrFolderPath = strings.ReplaceAll(fileOrFolderPath, "\\", "/")
 	return path.Clean(fileOrFolderPath)
+}
+
+func SumFileMd5(filePath string) (string, error) {
+	reader, err := os.Open(filePath)
+	defer reader.Close()
+	if err != nil {
+		return "", err
+	}
+	md5 := md5.New()
+	io.Copy(md5, reader)
+	return hex.EncodeToString(md5.Sum(nil)), nil
 }

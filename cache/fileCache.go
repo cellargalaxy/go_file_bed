@@ -4,6 +4,7 @@ import (
 	"../dao"
 	"../model"
 	"fmt"
+	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"io"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 var log = logrus.New()
 var cache sync.Map
+var selectAllFileKey = uuid.Must(uuid.NewV4()).String()
 
 //添加文件
 func InsertFile(filePath string, reader io.Reader) error {
@@ -54,4 +56,17 @@ func SelectFileOrFolder(fileOrFolderPath string) ([]model.FileOrFolderInfo, erro
 		cache.Store(fileOrFolderPath, fileOrFolderInfos)
 	}
 	return fileOrFolderInfos.([]model.FileOrFolderInfo), err
+}
+
+//查询某个文件夹下的全部文件的信息
+func SelectAllFile(folderPath string) ([]model.FileOrFolderInfo, error) {
+	fileInfos, _ := cache.Load(selectAllFileKey)
+	if fileInfos != nil {
+		return fileInfos.([]model.FileOrFolderInfo), nil
+	}
+	fileInfos, err := dao.SelectAllFile(folderPath)
+	if err == nil {
+		cache.Store(selectAllFileKey, fileInfos)
+	}
+	return fileInfos.([]model.FileOrFolderInfo), err
 }

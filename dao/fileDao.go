@@ -66,7 +66,11 @@ func DeleteFile(filePath string) error {
 func SelectFileOrFolder(fileOrFolderPath string) ([]model.FileOrFolderInfo, error) {
 	existAndIsFile, fileInfo := utils.ExistAndIsFile(fileOrFolderPath)
 	if existAndIsFile {
-		return []model.FileOrFolderInfo{{fileOrFolderPath, fileInfo.Name(), 1, fileInfo.Size()}}, nil
+		md5, err := utils.SumFileMd5(fileOrFolderPath)
+		if err != nil {
+			return nil, err
+		}
+		return []model.FileOrFolderInfo{{fileOrFolderPath, fileInfo.Name(), 1, fileInfo.Size(), md5}}, nil
 	}
 
 	existAndIsFolder, _ := utils.ExistAndIsFolder(fileOrFolderPath)
@@ -80,11 +84,50 @@ func SelectFileOrFolder(fileOrFolderPath string) ([]model.FileOrFolderInfo, erro
 		return nil, err
 	}
 
-	folderInfos := make([]model.FileOrFolderInfo, len(files))
+	var folderInfos []model.FileOrFolderInfo
 	for i := range files {
 		childFileOrFolderPath := path.Join(fileOrFolderPath, files[i].Name())
-		count, size, fileInfo, _ := utils.GetFileOrFolderInfo(childFileOrFolderPath)
-		folderInfos[i] = model.FileOrFolderInfo{childFileOrFolderPath, fileInfo.Name(), count, size}
+		count, size, fileInfo, err := utils.GetFileOrFolderInfo(childFileOrFolderPath)
+		if err != nil {
+			log.WithFields(logrus.Fields{"err": err}).Info("查询文件或者文件夹下的信息失败")
+			continue
+		}
+		folderInfos = append(folderInfos, model.FileOrFolderInfo{childFileOrFolderPath, fileInfo.Name(), count, size, ""})
 	}
 	return folderInfos, nil
+}
+
+//查询某个文件夹下的全部文件的信息
+func SelectAllFile(folderPath string) ([]model.FileOrFolderInfo, error) {
+	existAndIsFile, fileInfo := utils.ExistAndIsFile(folderPath)
+	if existAndIsFile {
+		md5, err := utils.SumFileMd5(folderPath)
+		if err != nil {
+			return nil, err
+		}
+		return []model.FileOrFolderInfo{{folderPath, fileInfo.Name(), 1, fileInfo.Size(), md5}}, nil
+	}
+
+	existAndIsFolder, _ := utils.ExistAndIsFolder(folderPath)
+	if !existAndIsFolder {
+		log.WithFields(logrus.Fields{"folderPath": folderPath}).Info("所查询路径不存在")
+		return nil, errors.New(fmt.Sprintf("所查询路径不存在: %v", folderPath))
+	}
+
+	files, err := ioutil.ReadDir(folderPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var fileInfos []model.FileOrFolderInfo
+	for i := range files {
+		childFolderPath := path.Join(folderPath, files[i].Name())
+		childFolderInfos, err := SelectAllFile(childFolderPath)
+		if err != nil {
+			log.WithFields(logrus.Fields{"err": err}).Info("查询文件的信息失败")
+			continue
+		}
+		fileInfos = append(fileInfos, childFolderInfos...)
+	}
+	return fileInfos, nil
 }

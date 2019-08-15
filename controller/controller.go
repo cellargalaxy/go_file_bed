@@ -31,6 +31,7 @@ func Controller() {
 	adminGroup.POST("/uploadFile", uploadFileController)
 	adminGroup.POST("/removeFile", removeFileController)
 	adminGroup.GET("/listFileOrFolderInfo", listFileOrFolderInfoController)
+	adminGroup.GET("/listAllFileInfo", listAllFileInfoController)
 
 	engine.Run("0.0.0.0:8880")
 }
@@ -51,14 +52,13 @@ func setLogin(context *gin.Context) {
 }
 
 func isLogin(context *gin.Context) bool {
-	return true
 	session := sessions.Default(context)
 	sessionSecret := session.Get(secretKey)
 	return sessionSecret == secret
 }
 
 func loginController(context *gin.Context) {
-	token := context.Param("token")
+	token := context.Request.FormValue("token")
 	log.Info("用户登录")
 
 	if service.CheckToken(token) {
@@ -70,7 +70,7 @@ func loginController(context *gin.Context) {
 }
 
 func removeFileController(context *gin.Context) {
-	filePath := context.Param("filePath")
+	filePath := context.Request.FormValue("filePath")
 	log.WithFields(logrus.Fields{"filePath": filePath}).Info("删除文件")
 
 	err := service.RemoveFile(filePath)
@@ -78,6 +78,17 @@ func removeFileController(context *gin.Context) {
 		context.JSON(http.StatusOK, createFailResponse(err.Error()))
 	} else {
 		context.JSON(http.StatusOK, createSuccessResponse("remove file success", nil))
+	}
+}
+
+func listAllFileInfoController(context *gin.Context) {
+	log.Info("查询所有文件")
+
+	fileInfos, err := service.ListAllFileInfo()
+	if err != nil {
+		context.JSON(http.StatusOK, createFailResponse(err.Error()))
+	} else {
+		context.JSON(http.StatusOK, createSuccessResponse("", fileInfos))
 	}
 }
 

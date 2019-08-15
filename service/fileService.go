@@ -58,3 +58,13 @@ func ListFileOrFolderInfo(fileOrFolderPath string) ([]model.FileOrFolderInfo, er
 	}
 	return fileOrFolderInfos, nil
 }
+
+func ListAllFileInfo() ([]model.FileOrFolderInfo, error) {
+	fileInfos, err := cache.SelectAllFile(FileBedPath)
+	if fileInfos != nil && err == nil {
+		for i := range fileInfos {
+			fileInfos[i].Path = utils.ClearPath(strings.Replace(fileInfos[i].Path, FileBedPath, "", 1))
+		}
+	}
+	return fileInfos, nil
+}
