@@ -9,25 +9,27 @@ import (
 )
 
 type Config struct {
-	Token  string `yaml:"token"`
-	SynUrl string `yaml:"synUrl"`
+	Token            string `yaml:"token"`
+	SynUrl           string `yaml:"synUrl"`
+	ListeningAddress string `yaml:"listeningAddress"`
+	FileBedPath      string `yaml:"fileBedPath"`
 }
 
 const configFilePath string = "config.yml"
 
 var log = logrus.New()
-var config = Config{"token", "synUrl"}
+var config = Config{"token", "http://127.0.0.1:8880", "0.0.0.0:8880", "file_bed"}
 
 func init() {
 	log.Info("加载配置文件")
 	existAndIsFile, _ := utils.ExistAndIsFile(configFilePath)
 	if !existAndIsFile {
 		writer, err := utils.CreateFile(configFilePath)
-		defer writer.Close()
 		if err != nil {
 			log.WithFields(logrus.Fields{"configFilePath": configFilePath, "err": err}).Panic("配置文件不存在，但创建配置文件失败")
 			return
 		}
+		defer writer.Close()
 		bytes, err := yaml.Marshal(&config)
 		if err != nil {
 			log.WithFields(logrus.Fields{"config": config, "err": err}).Panic("创建配置文件初始配置失败")

@@ -75,10 +75,10 @@ func ClearPath(fileOrFolderPath string) string {
 
 func SumFileMd5(filePath string) (string, error) {
 	reader, err := os.Open(filePath)
-	defer reader.Close()
 	if err != nil {
 		return "", err
 	}
+	defer reader.Close()
 	md5 := md5.New()
 	io.Copy(md5, reader)
 	return hex.EncodeToString(md5.Sum(nil)), nil

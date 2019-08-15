@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"../config"
+	"../model"
 	"../service"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -13,6 +15,7 @@ import (
 var log = logrus.New()
 var secretKey = "secret"
 var secret = uuid.Must(uuid.NewV4()).String()
+var fileBedPath = config.GetConfig().FileBedPath
 
 func Controller() {
 	store := cookie.NewStore([]byte(secret))
@@ -24,16 +27,15 @@ func Controller() {
 	engine.GET("/", func(context *gin.Context) {
 		context.HTML(http.StatusOK, "index.html", gin.H{})
 	})
-	engine.POST("/login", loginController)
-	engine.Static("/file", service.FileBedPath)
+	engine.Static(service.FileUrl, fileBedPath)
+	engine.POST(service.LoginUrl, loginController)
 
-	adminGroup := engine.Group("/admin", validate)
-	adminGroup.POST("/uploadFile", uploadFileController)
-	adminGroup.POST("/removeFile", removeFileController)
-	adminGroup.GET("/listFileOrFolderInfo", listFileOrFolderInfoController)
-	adminGroup.GET("/listAllFileInfo", listAllFileInfoController)
+	engine.POST(service.UploadFileUrl, validate, uploadFileController)
+	engine.POST(service.RemoveFileUrl, validate, removeFileController)
+	engine.GET(service.ListFileOrFolderInfoUrl, validate, listFileOrFolderInfoController)
+	engine.GET(service.ListAllFileInfoUrl, validate, listAllFileInfoController)
 
-	engine.Run("0.0.0.0:8880")
+	engine.Run(config.GetConfig().ListeningAddress)
 }
 
 func validate(context *gin.Context) {
@@ -127,10 +129,10 @@ func uploadFileController(context *gin.Context) {
 }
 
 func createSuccessResponse(massage string, data interface{}) map[string]interface{} {
-	return createResponse(0, massage, data)
+	return createResponse(model.SuccessCode, massage, data)
 }
 func createFailResponse(massage string) map[string]interface{} {
-	return createResponse(1, massage, nil)
+	return createResponse(model.FailCode, massage, nil)
 }
 func createResponse(code int, massage string, data interface{}) map[string]interface{} {
 	return gin.H{"code": code, "massage": massage, "data": data}

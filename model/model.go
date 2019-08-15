@@ -1,5 +1,8 @@
 package model
 
+const SuccessCode = 1
+const FailCode = 2
+
 type FileOrFolderInfo struct {
 	Path      string
 	Name      string
