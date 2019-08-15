@@ -3,11 +3,22 @@ package main
 import (
 	"./controller"
 	"./service"
+	"./static"
+	"./utils"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"os"
 )
 
 var log = logrus.New()
+
+func init() {
+	err := utils.OutputStaticFile(static.Base64Map)
+	if err != nil {
+		log.WithFields(logrus.Fields{"err": err}).Panic("静态文件输出失败")
+	}
+	log.Info("静态文件输出成功")
+}
 
 func main() {
 	cmd := ""
@@ -24,4 +35,8 @@ func main() {
 	}
 	log.Info("web模式")
 	controller.Controller()
+}
+
+func buildStaticFile() {
+	fmt.Println(utils.BuildStaticFile("templates"))
 }
