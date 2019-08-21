@@ -30,4 +30,12 @@ fi
 echo $config
 echo 'config,input any key go on,or control+c over'
 read
+
+wget 'https://github.com/cellargalaxy/goFileBed/releases/download/v0.0.2/goFileBed-linux'
+chmod 755 ./goFileBed-linux
+./goFileBed-linux
+
 echo $config > $configPath
+
+docker build -t go_file_bed .
+docker run -d -v file_bed:/file_bed
