@@ -28,11 +28,6 @@ func InsertFile(filePath string, reader io.Reader) error {
 
 //删除文件，随便删除文件其上的空文件夹
 func DeleteFile(filePath string) error {
-	existAndIsFile, _ := utils.ExistAndIsFile(filePath)
-	if !existAndIsFile {
-		log.WithFields(logrus.Fields{"filePath": filePath}).Error("文件不存在或者不是文件")
-		return errors.New(fmt.Sprintf("文件不存在或者不是文件: %v", filePath))
-	}
 	err := os.Remove(filePath)
 	if err != nil {
 		return err
@@ -66,11 +61,7 @@ func DeleteFile(filePath string) error {
 func SelectFileOrFolder(fileOrFolderPath string) ([]model.FileOrFolderInfo, error) {
 	existAndIsFile, fileInfo := utils.ExistAndIsFile(fileOrFolderPath)
 	if existAndIsFile {
-		md5, err := utils.SumFileMd5(fileOrFolderPath)
-		if err != nil {
-			return nil, err
-		}
-		return []model.FileOrFolderInfo{{fileOrFolderPath, fileInfo.Name(), 1, fileInfo.Size(), md5}}, nil
+		return []model.FileOrFolderInfo{{fileOrFolderPath, fileInfo.Name(), existAndIsFile, 1, fileInfo.Size(), "", ""}}, nil
 	}
 
 	existAndIsFolder, _ := utils.ExistAndIsFolder(fileOrFolderPath)
@@ -92,7 +83,7 @@ func SelectFileOrFolder(fileOrFolderPath string) ([]model.FileOrFolderInfo, erro
 			log.WithFields(logrus.Fields{"err": err}).Error("查询文件或者文件夹下的信息失败")
 			continue
 		}
-		folderInfos = append(folderInfos, model.FileOrFolderInfo{childFileOrFolderPath, fileInfo.Name(), count, size, ""})
+		folderInfos = append(folderInfos, model.FileOrFolderInfo{childFileOrFolderPath, fileInfo.Name(), !fileInfo.IsDir(), count, size, "", ""})
 	}
 	return folderInfos, nil
 }
@@ -101,11 +92,7 @@ func SelectFileOrFolder(fileOrFolderPath string) ([]model.FileOrFolderInfo, erro
 func SelectAllFile(folderPath string) ([]model.FileOrFolderInfo, error) {
 	existAndIsFile, fileInfo := utils.ExistAndIsFile(folderPath)
 	if existAndIsFile {
-		md5, err := utils.SumFileMd5(folderPath)
-		if err != nil {
-			return nil, err
-		}
-		return []model.FileOrFolderInfo{{folderPath, fileInfo.Name(), 1, fileInfo.Size(), md5}}, nil
+		return []model.FileOrFolderInfo{{folderPath, fileInfo.Name(), existAndIsFile, 1, fileInfo.Size(), "", ""}}, nil
 	}
 
 	existAndIsFolder, _ := utils.ExistAndIsFolder(folderPath)

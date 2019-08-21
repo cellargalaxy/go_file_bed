@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap/dist/css/bootstrap.min.css"/>
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css"/>
+    <title>file bed</title>
+</head>
+<body>
+<div class="container">
+
+    <b-input-group id="loginForm">
+        <b-form-input type="password" :placeholder="isLogin?'logined':'token'" v-model="token"></b-form-input>
+        <button class="btn btn-outline-primary" type="button" @click="login">login</button>
+    </b-input-group>
+
+    <hr/>
+    <hr/>
+
+    <form id="uploadForm">
+        <b-input-group>
+            <b-form-file v-model="file"></b-form-file>
+        </b-input-group>
+        <b-input-group>
+            <b-form-input type="text" placeholder="sort" v-model="sort"></b-form-input>
+            <button class="btn btn-outline-primary" type="button" @click="uploadFile">upload</button>
+        </b-input-group>
+        <br/>
+        <b-input-group>
+            <b-form-input type="text" placeholder="url" v-model="url"></b-form-input>
+        </b-input-group>
+        <b-input-group>
+            <b-form-input type="text" placeholder="sort" v-model="sort"></b-form-input>
+            <button class="btn btn-outline-primary" type="button" @click="uploadUrl">upload</button>
+        </b-input-group>
+        <br/>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">name</th>
+                    <th scope="col">size</th>
+                    <th scope="col">count</th>
+                    <th scope="col">md5</th>
+                    <th scope="col">delete</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(fileInfo, index) in fileInfos">
+                    <td><a target="_blank" :href="fileInfo.url">{{fileInfo.name}}</a></td>
+                    <td>{{fileInfo.fileSize}}</td>
+                    <td>{{fileInfo.fileCount}}</td>
+                    <td><code>{{fileInfo.md5}}</code></td>
+                    <td>
+                        <button class="btn btn-outline-danger" type="button"
+                                v-if="fileInfo.isFile" @click="deleteFile(index)">
+                            delete
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </form>
+
+    <hr/>
+    <hr/>
+
+    <div class="table-responsive" id="folderTable">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item" v-for="(breadcrumb, index) in breadcrumbs"
+                    @click="breadcrumbGo(index)"><a href="javascript:;">{{breadcrumb.name}}</a></li>
+            </ol>
+        </nav>
+
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">name</th>
+                <th scope="col">size</th>
+                <th scope="col">count</th>
+                <th scope="col">md5</th>
+                <th scope="col">delete</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(fileInfo, index) in fileInfos">
+                <td><a href="javascript:;" @click="openFile(index)">{{fileInfo.name}}</a></td>
+                <td>{{fileInfo.fileSize}}</td>
+                <td>{{fileInfo.fileCount}}</td>
+                <td><code>{{fileInfo.md5}}</code></td>
+                <td>
+                    <button class="btn btn-outline-danger" type="button"
+                            v-if="fileInfo.isFile" @click="deleteFile(index)">
+                        delete
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+<script src="//unpkg.com/vue@latest/dist/vue.min.js"></script>
+<script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+<script src="https://cdn.bootcss.com/qs/6.8.0/qs.min.js"></script>
+<script src="//cdn.bootcss.com/axios/0.19.0-beta.1/axios.min.js"></script>
+
+<script>
+    window.onbeforeunload = (event) => '您可能有数据没有保存'
+
+    const loginVue = new Vue({
+        el: '#loginForm',
+        data: {
+            token: null,
+            isLogin: false
+        },
+        methods: {
+            login: function () {
+                axios.post("/login", Qs.stringify({token: this.token}))
+                    .then(response => {
+                        const result = response.data
+                        window.alert(result.massage)
+                        if (result.code == 1) {
+                            this.token = null
+                            this.isLogin = true
+                            folderVue.listFileOrFolderInfo()
+                        } else {
+                            this.isLogin = false
+                        }
+                    })
+                    .catch(error => window.alert("error: " + JSON.stringify(error)))
+            }
+        }
+    })
+
+    const uploadFileVue = new Vue({
+        el: '#uploadForm',
+        data: {
+            sort: "",
+            file: null,
+            url: null,
+            fileInfos: [],
+        },
+        methods: {
+            uploadFile: function () {
+                if (this.sort == null) {
+                    this.sort = ""
+                }
+                const param = new FormData()
+                param.append("sort", this.sort)
+                param.append("file", this.file)
+                axios.post("/admin/uploadFile", param, {headers: {'Content-Type': 'multipart/form-data'}})
+                    .then(response => {
+                        const result = response.data
+                        window.alert(result.massage)
+                        if (result.code == 1) {
+                            this.sort = ""
+                            this.file = null
+                            result.data.fileSize = readablizeBytes(result.data.fileSize)
+                            this.fileInfos.unshift(result.data)
+                        }
+                    })
+                    .catch(error => alert("error: " + JSON.stringify(error)))
+            },
+            uploadUrl: function () {
+                if (this.sort == null) {
+                    this.sort = ""
+                }
+                axios.post("/admin/uploadUrl", Qs.stringify({sort: this.sort, url: this.url}))
+                    .then(response => {
+                        const result = response.data
+                        window.alert(result.massage)
+                        if (result.code == 1) {
+                            this.sort = ""
+                            this.url = null
+                            result.data.fileSize = readablizeBytes(result.data.fileSize)
+                            this.fileInfos.unshift(result.data)
+                        }
+                    })
+                    .catch(error => alert("error: " + JSON.stringify(error)))
+            },
+            deleteFile: function (index) {
+                deleteFile(this.fileInfos, index)
+            },
+        }
+    })
+
+    const folderVue = new Vue({
+        el: '#folderTable',
+        data: {
+            currentPath: "",
+            breadcrumbs: [
+                {name: "root", path: ""},
+            ],
+            fileInfos: [],
+        },
+        methods: {
+            breadcrumbGo: function (index) {
+                this.gotoFolder(this.breadcrumbs[index].path)
+            },
+            openFile: function (index) {
+                var fileInfo = this.fileInfos[index]
+                if (fileInfo.isFile) {
+                    window.open(fileInfo.url)
+                    return
+                }
+                this.gotoFolder(fileInfo.path)
+            },
+            setBreadcrumb: function () {
+                const paths = this.currentPath.split("/")
+                this.breadcrumbs = [{name: "root", path: ""}]
+                let fatherBreadcrumbIndex = 0
+                for (let i = 0; i < paths.length; i++) {
+                    if (paths[i] == null || paths[i] == "") {
+                        continue
+                    }
+                    this.breadcrumbs.push({
+                        name: paths[i],
+                        path: this.breadcrumbs[fatherBreadcrumbIndex].path + "/" + paths[i]
+                    })
+                    fatherBreadcrumbIndex++
+                }
+            },
+            listFileOrFolderInfo: function () {
+                axios.get("/admin/listFileOrFolderInfo", {params: {fileOrFolderPath: this.currentPath}})
+                    .then(function (response) {
+                        const result = response.data
+                        if (result.code == 1) {
+                            if (result.data == null || result.data.length == 0) {
+                                window.alert("当前路径没有文件")
+                                result.data = []
+                            }
+                            folderVue.fileInfos = result.data
+                            folderVue.fileInfos.sort((info1, info2) => {
+                                if (info1.isFile != info2.isFile) {
+                                    return !info1.isFile ? -1 : 1
+                                }
+                                return info1.path - info2.path
+                            })
+                            for (let i = 0; i < folderVue.fileInfos.length; i++) {
+                                folderVue.fileInfos[i].fileSize = readablizeBytes(folderVue.fileInfos[i].fileSize)
+                            }
+                        } else {
+                            window.alert(result.massage)
+                        }
+                    })
+                    .catch(error => alert("error: " + JSON.stringify(error)))
+            },
+            gotoFolder: function (path) {
+                this.currentPath = path
+                this.setBreadcrumb()
+                this.listFileOrFolderInfo()
+            },
+            deleteFile: function (index) {
+                deleteFile(this.fileInfos, index)
+            },
+        }
+    })
+
+    function deleteFile(fileInfos, index) {
+        if (!fileInfos[index].isFile) {
+            return false
+        }
+        axios.post("/admin/removeFile", Qs.stringify({filePath: fileInfos[index].path}))
+            .then(response => {
+                const result = response.data
+                alert(result.massage)
+                if (result.code == 1) {
+                    fileInfos.splice(index, 1)
+                }
+            })
+            .catch(error => alert("error: " + JSON.stringify(error)))
+    }
+
+    function readablizeBytes(bytes) {
+        var s = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+        var e = Math.floor(Math.log(bytes) / Math.log(1024));
+        return (bytes / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + s[e];
+    }
+</script>
+</body>
+</html>

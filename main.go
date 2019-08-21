@@ -3,7 +3,7 @@ package main
 import (
 	"./controller"
 	"./service"
-	"./static"
+	"./staticBuild"
 	"./utils"
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -13,7 +13,7 @@ import (
 var log = logrus.New()
 
 func init() {
-	err := utils.OutputStaticFile(static.Base64Map)
+	err := utils.OutputStaticFile(staticBuild.Base64Map)
 	if err != nil {
 		log.WithFields(logrus.Fields{"err": err}).Panic("静态文件输出失败")
 	}
@@ -27,7 +27,9 @@ func main() {
 		log.WithFields(logrus.Fields{"cmd": cmd}).Info("命令入参")
 		if cmd == "syn" {
 			log.Info("同步文件模式")
-			service.SynFile()
+			if err := service.SynFile(); err != nil {
+				log.WithFields(logrus.Fields{"err": err}).Error("同步文件失败")
+			}
 		} else {
 			log.WithFields(logrus.Fields{"cmd": cmd}).Error("非法命令入参")
 		}
@@ -38,5 +40,5 @@ func main() {
 }
 
 func buildStaticFile() {
-	fmt.Println(utils.BuildStaticFile("templates"))
+	fmt.Println(utils.BuildStaticFile("goFileBed.html"))
 }

@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
@@ -112,49 +114,80 @@ func GetAllFileInfoFromFolder(folderPath string) (map[string]os.FileInfo, error)
 	return fileInfoMap, nil
 }
 
-const StaticFileBuildPath = "static/staticFileBuild.go"
+const StaticFileBuildPackageName = "staticBuild"
+const StaticFileBuildPath = StaticFileBuildPackageName + "/staticFileBuild.go"
 
 func BuildStaticFile(fileOrFolderPaths ...string) error {
 	for i := range fileOrFolderPaths {
-		fileOrFolderPath := fileOrFolderPaths[i]
-
-		existAndIsFile, _ := ExistAndIsFile(fileOrFolderPath)
-		if existAndIsFile {
-			bytes, err := ioutil.ReadFile(fileOrFolderPath)
-			if err != nil {
-				return err
-			}
-			base64String := base64.StdEncoding.EncodeToString(bytes)
-			err = writeBuildStaticFile(map[string]string{fileOrFolderPath: base64String})
-			if err != nil {
-				return err
-			}
-		}
-
-		existAndIsFolder, _ := ExistAndIsFolder(fileOrFolderPath)
-		if !existAndIsFolder {
-			return errors.New(fmt.Sprintf("路径不存在: %v", fileOrFolderPath))
-		}
-
-		fileInfoMap, err := GetAllFileInfoFromFolder(fileOrFolderPath)
-		if err != nil {
-			return err
-		}
-		base64Map := map[string]string{}
-		for filePath := range fileInfoMap {
-			bytes, err := ioutil.ReadFile(filePath)
-			if err != nil {
-				return err
-			}
-			base64String := base64.StdEncoding.EncodeToString(bytes)
-			base64Map[filePath] = base64String
-		}
-		err = writeBuildStaticFile(base64Map)
-		if err != nil {
+		if err := BuildOneStaticFile(fileOrFolderPaths[i]); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func BuildOneStaticFile(fileOrFolderPath string) error {
+	existAndIsFile, _ := ExistAndIsFile(fileOrFolderPath)
+	if existAndIsFile {
+		byteArray, err := ioutil.ReadFile(fileOrFolderPath)
+		if err != nil {
+			return err
+		}
+		base64String, err := ByteArrayToGzipToBase64(byteArray)
+		if err != nil {
+			return err
+		}
+		return writeBuildStaticFile(map[string]string{fileOrFolderPath: base64String})
+	}
+
+	existAndIsFolder, _ := ExistAndIsFolder(fileOrFolderPath)
+	if !existAndIsFolder {
+		return errors.New(fmt.Sprintf("路径不存在: %v", fileOrFolderPath))
+	}
+
+	fileInfoMap, err := GetAllFileInfoFromFolder(fileOrFolderPath)
+	if err != nil {
+		return err
+	}
+	base64Map := map[string]string{}
+	for filePath := range fileInfoMap {
+		byteArray, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			return err
+		}
+		base64String, err := ByteArrayToGzipToBase64(byteArray)
+		if err != nil {
+			return err
+		}
+		base64Map[filePath] = base64String
+	}
+	return writeBuildStaticFile(base64Map)
+}
+
+func ByteArrayToGzipToBase64(byteArray []byte) (string, error) {
+	var byteBuffer bytes.Buffer
+	gzipWriter := gzip.NewWriter(&byteBuffer)
+	if _, err := gzipWriter.Write(byteArray); err != nil {
+		return "", err
+	}
+	if err := gzipWriter.Close(); err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(byteBuffer.Bytes()), nil
+}
+
+func Base64ToGzipByteArray(base64String string) ([]byte, error) {
+	byteArray, err := base64.StdEncoding.DecodeString(base64String)
+	if err != nil {
+		return nil, err
+	}
+	reader := bytes.NewReader(byteArray)
+	gzipReader, err := gzip.NewReader(reader)
+	if err != nil {
+		return nil, err
+	}
+	defer gzipReader.Close()
+	return ioutil.ReadAll(gzipReader)
 }
 
 func writeBuildStaticFile(base64Map map[string]string) error {
@@ -162,7 +195,7 @@ func writeBuildStaticFile(base64Map map[string]string) error {
 	for k, v := range base64Map {
 		mapStrings = mapStrings + "\n	Base64Map[\"" + k + "\"] = \"" + v + "\""
 	}
-	code := `package static
+	code := `package ` + StaticFileBuildPackageName + `
 var Base64Map = map[string]string{}
 func init() {` + mapStrings + `
 }`
@@ -181,19 +214,58 @@ func OutputStaticFile(base64Map map[string]string) error {
 		if existAndIsFile {
 			continue
 		}
-		bytes, err := base64.StdEncoding.DecodeString(base64String)
+		byteArray, err := Base64ToGzipByteArray(base64String)
 		if err != nil {
 			return err
 		}
+
 		writer, err := CreateFile(filePath)
 		if err != nil {
 			return err
 		}
 		defer writer.Close()
-		_, err = writer.Write(bytes)
+
+		_, err = writer.Write(byteArray)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+var Url2PathMaps = []map[string]string{
+	{"key": "-", "value": "--"},
+	{"key": ":", "value": "-c"},
+	{"key": "/", "value": "-s"},
+	{"key": "\\", "value": "-b"},
+	{"key": "?", "value": "-q"},
+	{"key": "*", "value": "-a"},
+	{"key": ">", "value": "-g"},
+	{"key": "<", "value": "-l"},
+	{"key": "|", "value": "-v"},
+}
+var Path2UrlMaps = []map[string]string{
+	{"key": "-c", "value": ":"},
+	{"key": "-s", "value": "/"},
+	{"key": "-b", "value": "\\"},
+	{"key": "-q", "value": "?"},
+	{"key": "-a", "value": "*"},
+	{"key": "-g", "value": ">"},
+	{"key": "-l", "value": "<"},
+	{"key": "-v", "value": "|"},
+	{"key": "--", "value": "-"},
+}
+
+func Url2Path(url string) string {
+	for i := range Url2PathMaps {
+		url = strings.ReplaceAll(url, Url2PathMaps[i]["key"], Url2PathMaps[i]["value"])
+	}
+	return url
+}
+
+func Path2Url(pathString string) string {
+	for i := range Path2UrlMaps {
+		pathString = strings.ReplaceAll(pathString, Path2UrlMaps[i]["key"], Path2UrlMaps[i]["value"])
+	}
+	return pathString
 }

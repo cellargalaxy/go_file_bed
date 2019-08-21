@@ -1,6 +1,7 @@
 package service
 
 import (
+	"../cache"
 	"../config"
 	"../dao"
 	"../model"
@@ -8,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
@@ -17,7 +17,6 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -25,61 +24,92 @@ const FileUrl = "/file"
 const LoginUrl = "/login"
 
 const UploadFileUrl = "/admin/uploadFile"
+const UploadUrlUrl = "/admin/uploadUrl"
 const RemoveFileUrl = "/admin/removeFile"
 const ListFileOrFolderInfoUrl = "/admin/listFileOrFolderInfo"
 const ListAllFileInfoUrl = "/admin/listAllFileInfo"
 
 var log = logrus.New()
 var fileBedPath = config.GetConfig().FileBedPath
-var cache sync.Map
-var selectAllFileKey = uuid.Must(uuid.NewV4()).String()
 
-func AddFile(sort string, filename string, reader io.Reader) error {
+func AddFile(sort string, filename string, reader io.Reader) (model.FileOrFolderInfo, error) {
 	filePath := path.Join(fileBedPath, sort, time.Now().Format("20060102"), filename)
 	filePath = utils.ClearPath(filePath)
 	log.WithFields(logrus.Fields{"filePath": filePath}).Info("添加文件路径")
 
 	if !strings.HasPrefix(filePath, fileBedPath) {
 		log.WithFields(logrus.Fields{"filePath": filePath}).Error("添加文件路径不在指定路径下")
-		return errors.New(fmt.Sprintf("添加文件路径不在指定路径下: %v", filePath))
+		return model.FileOrFolderInfo{}, errors.New(fmt.Sprintf("添加文件路径不在指定路径下: %v", filePath))
 	}
 
 	err := dao.InsertFile(filePath, reader)
-	if err == nil {
-		cache.Delete(selectAllFileKey)
-		cache.Range(func(fileOrFolderPath, _ interface{}) bool {
-			if strings.HasPrefix(filePath, fileOrFolderPath.(string)) {
-				log.WithFields(logrus.Fields{"fileOrFolderPath": fileOrFolderPath}).Info("删除缓存")
-				cache.Delete(fileOrFolderPath)
-			}
-			return true
-		})
+	if err != nil {
+		return model.FileOrFolderInfo{}, err
 	}
-	return err
+	count, size, fileInfo, err := utils.GetFileOrFolderInfo(filePath)
+	if err != nil {
+		return model.FileOrFolderInfo{}, err
+	}
+	md5, err := utils.SumFileMd5(filePath)
+	if err != nil {
+		return model.FileOrFolderInfo{}, err
+	}
+	cache.DeleteFileOrFolderInfo(filePath)
+	filePath = utils.ClearPath(strings.Replace(filePath, fileBedPath, "", 1))
+	return model.FileOrFolderInfo{filePath, fileInfo.Name(), !fileInfo.IsDir(), count, size, md5, createUrl(filePath)}, nil
 }
 
-func RemoveFile(filePath string) error {
+func AddUrl(sort string, url string) (model.FileOrFolderInfo, error) {
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.WithFields(logrus.Fields{"url": url}).Error("文件下载请求创建失败")
+		return model.FileOrFolderInfo{}, err
+	}
+	fileUrl := fmt.Sprintf("%v://%v%v", request.URL.Scheme, request.URL.Host, request.URL.Path)
+	filename := utils.Url2Path(fileUrl)
+	log.WithFields(logrus.Fields{"fileUrl": fileUrl, "filename": filename}).Info("文件下载的文件名")
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		log.WithFields(logrus.Fields{"url": url}).Error("文件下载失败")
+		return model.FileOrFolderInfo{}, err
+	}
+	defer response.Body.Close()
+
+	return AddFile(sort, filename, response.Body)
+}
+
+func RemoveFile(filePath string) (model.FileOrFolderInfo, error) {
 	filePath = path.Join(fileBedPath, filePath)
 	filePath = utils.ClearPath(filePath)
 	log.WithFields(logrus.Fields{"filePath": filePath}).Info("删除文件路径")
 
 	if !strings.HasPrefix(filePath, fileBedPath) {
 		log.WithFields(logrus.Fields{"filePath": filePath}).Error("删除文件路径不在指定路径下")
-		return errors.New(fmt.Sprintf("删除文件路径不在指定路径下: %v", filePath))
+		return model.FileOrFolderInfo{}, errors.New(fmt.Sprintf("删除文件路径不在指定路径下: %v", filePath))
 	}
 
-	err := dao.DeleteFile(filePath)
-	if err == nil {
-		cache.Delete(selectAllFileKey)
-		cache.Range(func(fileOrFolderPath, _ interface{}) bool {
-			if strings.HasPrefix(filePath, fmt.Sprintf("%v", fileOrFolderPath)) {
-				log.WithFields(logrus.Fields{"fileOrFolderPath": fileOrFolderPath}).Info("删除缓存")
-				cache.Delete(fileOrFolderPath)
-			}
-			return true
-		})
+	existAndIsFile, _ := utils.ExistAndIsFile(filePath)
+	if !existAndIsFile {
+		log.WithFields(logrus.Fields{"filePath": filePath}).Error("删除文件不存在或者不是文件")
+		return model.FileOrFolderInfo{}, errors.New(fmt.Sprintf("删除文件不存在或者不是文件: %v", filePath))
 	}
-	return err
+
+	count, size, fileInfo, err := utils.GetFileOrFolderInfo(filePath)
+	if err != nil {
+		return model.FileOrFolderInfo{}, err
+	}
+	md5, err := utils.SumFileMd5(filePath)
+	if err != nil {
+		return model.FileOrFolderInfo{}, err
+	}
+	err = dao.DeleteFile(filePath)
+	if err != nil {
+		return model.FileOrFolderInfo{}, err
+	}
+	cache.DeleteFileOrFolderInfo(filePath)
+	filePath = utils.ClearPath(strings.Replace(filePath, fileBedPath, "", 1))
+	return model.FileOrFolderInfo{filePath, fileInfo.Name(), !fileInfo.IsDir(), count, size, md5, createUrl(filePath)}, nil
 }
 
 func ListFileOrFolderInfo(fileOrFolderPath string) ([]model.FileOrFolderInfo, error) {
@@ -92,43 +122,57 @@ func ListFileOrFolderInfo(fileOrFolderPath string) ([]model.FileOrFolderInfo, er
 		return nil, errors.New(fmt.Sprintf("查询文件路径不在指定路径下: %v", fileOrFolderPath))
 	}
 
-	fileOrFolderInfos, _ := cache.Load(fileOrFolderPath)
+	fileOrFolderInfos := cache.SelectListFileOrFolderInfo(fileOrFolderPath)
 	if fileOrFolderInfos != nil {
-		return fileOrFolderInfos.([]model.FileOrFolderInfo), nil
+		return fileOrFolderInfos, nil
 	}
 
 	fileOrFolderInfos, err := dao.SelectFileOrFolder(fileOrFolderPath)
-	if err == nil {
-		cache.Store(fileOrFolderPath, fileOrFolderInfos)
+	if err != nil {
+		return nil, err
 	}
 
-	infos := fileOrFolderInfos.([]model.FileOrFolderInfo)
-	if fileOrFolderInfos != nil && err == nil {
-		for i := range infos {
-			infos[i].Path = utils.ClearPath(strings.Replace(infos[i].Path, fileBedPath, "", 1))
+	for i := range fileOrFolderInfos {
+		if fileOrFolderInfos[i].IsFile {
+			md5, err := utils.SumFileMd5(fileOrFolderInfos[i].Path)
+			if err != nil {
+				return nil, err
+			}
+			fileOrFolderInfos[i].Md5 = md5
 		}
+		fileOrFolderInfos[i].Path = utils.ClearPath(strings.Replace(fileOrFolderInfos[i].Path, fileBedPath, "", 1))
+		fileOrFolderInfos[i].Url = createUrl(fileOrFolderInfos[i].Path)
 	}
-	return infos, err
+
+	cache.InsertListFileOrFolderInfo(fileOrFolderPath, fileOrFolderInfos)
+	return fileOrFolderInfos, err
 }
 
 func ListAllFileInfo() ([]model.FileOrFolderInfo, error) {
-	fileInfos, _ := cache.Load(selectAllFileKey)
+	fileInfos := cache.SelectListAllFileInfo()
 	if fileInfos != nil {
-		return fileInfos.([]model.FileOrFolderInfo), nil
+		return fileInfos, nil
 	}
 
 	fileInfos, err := dao.SelectAllFile(fileBedPath)
-	if err == nil {
-		cache.Store(selectAllFileKey, fileInfos)
+	if err != nil {
+		return nil, err
 	}
 
-	infos := fileInfos.([]model.FileOrFolderInfo)
-	if fileInfos != nil && err == nil {
-		for i := range infos {
-			infos[i].Path = utils.ClearPath(strings.Replace(infos[i].Path, fileBedPath, "", 1))
+	for i := range fileInfos {
+		if fileInfos[i].IsFile {
+			md5, err := utils.SumFileMd5(fileInfos[i].Path)
+			if err != nil {
+				return nil, err
+			}
+			fileInfos[i].Md5 = md5
 		}
+		fileInfos[i].Path = utils.ClearPath(strings.Replace(fileInfos[i].Path, fileBedPath, "", 1))
+		fileInfos[i].Url = createUrl(fileInfos[i].Path)
 	}
-	return infos, nil
+
+	cache.InsertListAllFileInfo(fileInfos)
+	return fileInfos, nil
 }
 
 func SynFile() error {
@@ -202,18 +246,25 @@ func SynFile() error {
 		return errors.New(fmt.Sprintf("获取全部文件信息失败: %v", allFileInfoResult))
 	}
 	log.WithFields(logrus.Fields{"allFileInfoResult": allFileInfoResult}).Info("获取全部文件信息成功")
+	fileOrFolderInfos := []model.FileOrFolderInfo{}
 	for i := range allFileInfoResult.Data {
-		err := downloadFile(allFileInfoResult.Data[i])
+		isDownload, err := downloadFile(allFileInfoResult.Data[i])
+		if isDownload && err == nil {
+			fileOrFolderInfos = append(fileOrFolderInfos, allFileInfoResult.Data[i])
+		}
 		if err == nil {
 			log.WithFields(logrus.Fields{"path": allFileInfoResult.Data[i].Path}).Info("文件下载成功")
 		} else {
 			log.WithFields(logrus.Fields{"err": err}).Error("文件下载失败")
 		}
 	}
+	for i := range fileOrFolderInfos {
+		log.WithFields(logrus.Fields{"path": fileOrFolderInfos[i].Path}).Info("下载了文件")
+	}
 	return nil
 }
 
-func downloadFile(fileOrFolderInfo model.FileOrFolderInfo) error {
+func downloadFile(fileOrFolderInfo model.FileOrFolderInfo) (bool, error) {
 	filePath := path.Join(fileBedPath, fileOrFolderInfo.Path)
 	filePath = utils.ClearPath(filePath)
 	log.WithFields(logrus.Fields{"filePath": filePath}).Info("添加文件路径")
@@ -223,22 +274,31 @@ func downloadFile(fileOrFolderInfo model.FileOrFolderInfo) error {
 		md5, _ := utils.SumFileMd5(filePath)
 		if fileOrFolderInfo.Md5 == md5 {
 			log.WithFields(logrus.Fields{"filePath": filePath}).Info("文件已存在且MD5匹配，跳过下载")
-			return nil
+			return false, nil
 		}
 	}
 
 	if !strings.HasPrefix(filePath, fileBedPath) {
 		log.WithFields(logrus.Fields{"filePath": filePath}).Error("添加文件路径不在指定路径下")
-		return errors.New(fmt.Sprintf("添加文件路径不在指定路径下: %v", filePath))
+		return false, errors.New(fmt.Sprintf("添加文件路径不在指定路径下: %v", filePath))
 	}
 
-	fileUrl := config.GetConfig().SynUrl + FileUrl + fileOrFolderInfo.Path
+	fileUrl := config.GetConfig().SynUrl + fileOrFolderInfo.Url
 	response, err := http.Get(fileUrl)
 	if err != nil {
 		log.WithFields(logrus.Fields{"filePath": filePath}).Error("文件下载请求失败")
-		return err
+		return false, err
 	}
 	defer response.Body.Close()
 
-	return dao.InsertFile(filePath, response.Body)
+	if response.StatusCode != http.StatusOK {
+		log.WithFields(logrus.Fields{"filePath": filePath, "StatusCode": response.StatusCode}).Error("文件下载请求状态码异常")
+		return false, errors.New(fmt.Sprintf("文件下载请求状态码异常: %v", response.StatusCode))
+	}
+
+	return true, dao.InsertFile(filePath, response.Body)
+}
+
+func createUrl(filePath string) string {
+	return FileUrl + filePath
 }
