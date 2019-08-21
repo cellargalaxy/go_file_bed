@@ -261,7 +261,11 @@
 
     function deleteFile(fileInfos, index) {
         if (!fileInfos[index].isFile) {
-            return false
+            window.alert("所删除的不是文件")
+            return
+        }
+        if (!window.confirm("确定要删除?!?: " + fileInfos[index].path)) {
+            return
         }
         axios.post("/admin/removeFile", Qs.stringify({filePath: fileInfos[index].path}))
             .then(response => {
