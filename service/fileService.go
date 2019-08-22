@@ -26,6 +26,7 @@ const LoginUrl = "/login"
 const UploadFileUrl = "/admin/uploadFile"
 const UploadUrlUrl = "/admin/uploadUrl"
 const RemoveFileUrl = "/admin/removeFile"
+const ClearAllCacheUrl = "/admin/clearAllCache"
 const ListFileOrFolderInfoUrl = "/admin/listFileOrFolderInfo"
 const ListAllFileInfoUrl = "/admin/listAllFileInfo"
 
@@ -173,6 +174,10 @@ func ListAllFileInfo() ([]model.FileOrFolderInfo, error) {
 
 	cache.InsertListAllFileInfo(fileInfos)
 	return fileInfos, nil
+}
+
+func ClearAllCache() error {
+	return cache.ClearAllCache()
 }
 
 func SynFile() error {

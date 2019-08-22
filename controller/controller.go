@@ -35,6 +35,7 @@ func Controller() {
 	engine.POST(service.UploadFileUrl, validate, uploadFileController)
 	engine.POST(service.UploadUrlUrl, validate, uploadUrlController)
 	engine.POST(service.RemoveFileUrl, validate, removeFileController)
+	engine.POST(service.ClearAllCacheUrl, validate, clearAllCacheController)
 	engine.GET(service.ListFileOrFolderInfoUrl, validate, listFileOrFolderInfoController)
 	engine.GET(service.ListAllFileInfoUrl, validate, listAllFileInfoController)
 
@@ -84,6 +85,17 @@ func removeFileController(context *gin.Context) {
 		context.JSON(http.StatusOK, createFailResponse(err.Error()))
 	} else {
 		context.JSON(http.StatusOK, createSuccessResponse("remove file success", fileInfo))
+	}
+}
+
+func clearAllCacheController(context *gin.Context) {
+	log.Info("清除全部缓存")
+
+	err := service.ClearAllCache()
+	if err != nil {
+		context.JSON(http.StatusOK, createFailResponse(err.Error()))
+	} else {
+		context.JSON(http.StatusOK, createSuccessResponse("clear all cache success", nil))
 	}
 }
 

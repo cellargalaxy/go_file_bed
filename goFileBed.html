@@ -67,6 +67,10 @@
     <hr/>
 
     <div class="table-responsive" id="folderTable">
+        <b-button-group>
+            <b-button variant="warning" @click="clearAllCache">clear all cache</b-button>
+        </b-button-group>
+
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item" v-for="(breadcrumb, index) in breadcrumbs"
@@ -108,7 +112,7 @@
 <script src="//cdn.bootcss.com/axios/0.19.0-beta.1/axios.min.js"></script>
 
 <script>
-    window.onbeforeunload = (event) => '您可能有数据没有保存'
+    window.onbeforeunload = (event) => 'maybe some data not save'
 
     const loginVue = new Vue({
         el: '#loginForm',
@@ -229,7 +233,7 @@
                         const result = response.data
                         if (result.code == 1) {
                             if (result.data == null || result.data.length == 0) {
-                                window.alert("当前路径没有文件")
+                                window.alert("this has not file or folder")
                                 result.data = []
                             }
                             folderVue.fileInfos = result.data
@@ -256,15 +260,29 @@
             deleteFile: function (index) {
                 deleteFile(this.fileInfos, index)
             },
+            clearAllCache: function () {
+                if (!window.confirm("sure clear all cache ?!?: " + fileInfos[index].path)) {
+                    return
+                }
+                axios.post("/admin/clearAllCache", Qs.stringify({}))
+                    .then(response => {
+                        const result = response.data
+                        alert(result.massage)
+                        if (result.code == 1) {
+                            this.listFileOrFolderInfo()
+                        }
+                    })
+                    .catch(error => alert("error: " + JSON.stringify(error)))
+            },
         }
     })
 
     function deleteFile(fileInfos, index) {
         if (!fileInfos[index].isFile) {
-            window.alert("所删除的不是文件")
+            window.alert("not file")
             return
         }
-        if (!window.confirm("确定要删除?!?: " + fileInfos[index].path)) {
+        if (!window.confirm("sure delete file ?!?: " + fileInfos[index].path)) {
             return
         }
         axios.post("/admin/removeFile", Qs.stringify({filePath: fileInfos[index].path}))

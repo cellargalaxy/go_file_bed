@@ -52,3 +52,8 @@ func InsertListAllFileInfo(fileOrFolderInfos []model.FileOrFolderInfo) {
 		cache.Store(selectAllFileKey, fileOrFolderInfos)
 	}
 }
+
+func ClearAllCache() error {
+	cache = sync.Map{}
+	return nil
+}
