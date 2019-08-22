@@ -27,7 +27,7 @@ echo $goFileBedConfig > $goFileBedConfigFilename
 
 echo `wget -q -O - https://raw.githubusercontent.com/cellargalaxy/goFileBed/master/Dockerfile` > $dockerfileFilename
 
-wget -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.1.0/goFileBed-linux"
+wget -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.1.1/goFileBed-linux"
 chmod 755 ./$goFileBedFilename
 
 docker build -t go_file_bed .
