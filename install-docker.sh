@@ -6,7 +6,7 @@ goFileBedFilename="goFileBed-linux"
 
 while :
 do
-    read -p "please enter token(required):" token
+    read -s -p "please enter token(required):" token
     if [ ! -z $token ];then
         break
     fi
