@@ -27,7 +27,21 @@ echo $goFileBedConfig > $goFileBedConfigFilename
 
 echo `wget -q -O - https://raw.githubusercontent.com/cellargalaxy/goFileBed/master/Dockerfile` > $dockerfileFilename
 
-wget -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.1.1/goFileBed-linux"
+wget -O -c $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.1.1/goFileBed-linux"
+
+if [ ! -f $dockerfileFilename ]; then
+    echo 'Dockerfile not exist'
+    exit 1
+fi
+if [ ! -f $goFileBedConfigFilename ]; then
+    echo 'config not exist'
+    exit 1
+fi
+if [ ! -f $goFileBedFilename ]; then
+    echo 'goFileBed not exist'
+    exit 1
+fi
+
 chmod 755 ./$goFileBedFilename
 
 docker build -t go_file_bed .
