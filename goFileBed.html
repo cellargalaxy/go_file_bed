@@ -68,7 +68,7 @@
 
     <div class="table-responsive" id="folderTable">
         <b-button-group>
-            <b-button variant="warning" @click="clearAllCache">clear all cache</b-button>
+            <b-button variant="btn btn-outline-warning" @click="clearAllCache">clear all cache</b-button>
         </b-button-group>
 
         <nav aria-label="breadcrumb">
@@ -228,6 +228,7 @@
                 }
             },
             listFileOrFolderInfo: function () {
+                this.fileInfos = []
                 axios.get("/admin/listFileOrFolderInfo", {params: {fileOrFolderPath: this.currentPath}})
                     .then(function (response) {
                         const result = response.data
@@ -261,7 +262,7 @@
                 deleteFile(this.fileInfos, index)
             },
             clearAllCache: function () {
-                if (!window.confirm("sure clear all cache ?!?: " + fileInfos[index].path)) {
+                if (!window.confirm("sure clear all cache ?!?")) {
                     return
                 }
                 axios.post("/admin/clearAllCache", Qs.stringify({}))
