@@ -38,7 +38,7 @@ func Controller() {
 	engine.GET(service.ListFileOrFolderInfoUrl, validate, listFileOrFolderInfoController)
 	engine.GET(service.ListAllFileInfoUrl, validate, listAllFileInfoController)
 
-	engine.Run(config.GetConfig().ListeningAddress)
+	engine.Run(config.GetConfig().ListenAddress)
 }
 
 func validate(context *gin.Context) {

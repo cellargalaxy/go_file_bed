@@ -9,10 +9,10 @@ import (
 )
 
 type Config struct {
-	Token            string `yaml:"token"`
-	SynUrl           string `yaml:"synUrl"`
-	ListeningAddress string `yaml:"listeningAddress"`
-	FileBedPath      string `yaml:"fileBedPath"`
+	Token         string `yaml:"token"`
+	SynUrl        string `yaml:"synUrl"`
+	ListenAddress string `yaml:"listenAddress"`
+	FileBedPath   string `yaml:"fileBedPath"`
 }
 
 const configFilePath string = "config.yml"
