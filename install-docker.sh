@@ -20,14 +20,18 @@ synUrl: http://127.0.0.1:8880
 listenAddress: 0.0.0.0:8880
 fileBedPath: file_bed'
 
-echo $goFileBedConfig
+cat<<EOF
+$goFileBedConfig
+EOF
 echo 'config,input any key go on,or control+c over'
 read
-echo $goFileBedConfig > $goFileBedConfigFilename
+cat>$goFileBedConfigFilename<<EOF
+$goFileBedConfig
+EOF
 
-echo `wget -q -O - https://raw.githubusercontent.com/cellargalaxy/goFileBed/master/Dockerfile` > $dockerfileFilename
+wget -c -O $dockerfileFilename "https://raw.githubusercontent.com/cellargalaxy/goFileBed/master/Dockerfile"
 
-wget -O -c $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.1.1/goFileBed-linux"
+wget -c -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.1.1/goFileBed-linux"
 
 if [ ! -f $dockerfileFilename ]; then
     echo 'Dockerfile not exist'
@@ -42,11 +46,15 @@ if [ ! -f $goFileBedFilename ]; then
     exit 1
 fi
 
+echo 'chmod 755 goFileBed'
 chmod 755 ./$goFileBedFilename
 
+echo 'docker build'
 docker build -t go_file_bed .
-docker run -d --name go_file_bed -p $listeningPort:8880 go_file_bed
+echo 'docker run'
+docker run -d --name go_file_bed -p $listenPort:8880 go_file_bed
 
+echo 'clear file'
 rm -rf $dockerfileFilename
 rm -rf $goFileBedConfigFilename
 rm -rf $goFileBedFilename
