@@ -15,8 +15,12 @@ read -p "please enter listen port(default:8880):" listenPort
 if [ -z $listenPort ];then
     listenPort="8880"
 fi
+read -p "please enter synUrl(default:http://127.0.0.1:8880):" synUrl
+if [ -z $synUrl ];then
+    synUrl="http://127.0.0.1:8880"
+fi
 goFileBedConfig='token: '$token'
-synUrl: http://127.0.0.1:8880
+synUrl: '$synUrl'
 listenAddress: 0.0.0.0:8880
 fileBedPath: file_bed'
 
