@@ -20,10 +20,7 @@ synUrl: http://127.0.0.1:8880
 listenAddress: 0.0.0.0:8880
 fileBedPath: file_bed'
 
-cat<<EOF
-$goFileBedConfig
-EOF
-echo 'config,input any key go on,or control+c over'
+echo 'input any key go on,or control+c over'
 read
 cat>$goFileBedConfigFilename<<EOF
 $goFileBedConfig
