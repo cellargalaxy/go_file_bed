@@ -14,13 +14,13 @@ if [ ! -f $configPath ]; then
     if [ -z $synUrl ];then
         synUrl="http://127.0.0.1:8880"
     fi
-    read -p "please enter listeningAddress(default:0.0.0.0:8880):" listeningAddress
-    if [ -z $listeningAddress ];then
-        listeningAddress="0.0.0.0:8880"
+    read -p "please enter listeningPort(default:8880):" listeningPort
+    if [ -z $listeningPort ];then
+        listeningPort="8880"
     fi
     config='token: '$token'
 synUrl: '$synUrl'
-listeningAddress: '$listeningAddress'
+listeningAddress: 0.0.0.0:8880
 fileBedPath: file_bed'
 else
     echo 'config exist'
@@ -38,4 +38,4 @@ chmod 755 ./goFileBed-linux
 echo $config > $configPath
 
 docker build -t go_file_bed .
-docker run -d -v file_bed:/file_bed
+docker run -d -v file_bed:/file_bed -p $listeningPort:8880 go_file_bed

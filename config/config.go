@@ -37,7 +37,6 @@ func init() {
 		}
 		writer.Write(bytes)
 		log.Info("成功创建初始化配置文件，请填写配置文件后再启动")
-		os.MkdirAll(config.FileBedPath, 0666)
 		os.Exit(0)
 	}
 	bytes, err := ioutil.ReadFile(configFilePath)
