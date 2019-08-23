@@ -32,7 +32,7 @@ EOF
 
 wget -c -O $dockerfileFilename "https://raw.githubusercontent.com/cellargalaxy/goFileBed/master/Dockerfile"
 
-wget -c -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.1.1/goFileBed-linux"
+wget -c -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.1.2/goFileBed-linux"
 
 if [ ! -f $dockerfileFilename ]; then
     echo 'Dockerfile not exist'
