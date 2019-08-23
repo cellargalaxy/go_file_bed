@@ -53,7 +53,7 @@ chmod 755 ./$goFileBedFilename
 echo 'docker build'
 docker build -t go_file_bed .
 echo 'docker run'
-docker run -d --name go_file_bed -p $listenPort:8880 go_file_bed
+docker run -d --name go_file_bed --volumes-from file_bed -p $listenPort:8880 go_file_bed
 
 echo 'clear file'
 rm -rf $dockerfileFilename
