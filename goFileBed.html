@@ -40,8 +40,9 @@
                 <tr>
                     <th scope="col">name</th>
                     <th scope="col">size</th>
-                    <th scope="col">count</th>
-                    <th scope="col">md5</th>
+                    <!--<th scope="col">count</th>-->
+                    <!--<th scope="col">md5</th>-->
+                    <th scope="col">url</th>
                     <th scope="col">delete</th>
                 </tr>
                 </thead>
@@ -49,8 +50,12 @@
                 <tr v-for="(fileInfo, index) in fileInfos">
                     <td><a target="_blank" :href="fileInfo.url">{{fileInfo.name}}</a></td>
                     <td>{{fileInfo.fileSize}}</td>
-                    <td>{{fileInfo.fileCount}}</td>
-                    <td><code>{{fileInfo.md5}}</code></td>
+                    <!--<td>{{fileInfo.fileCount}}</td>-->
+                    <!--<td><code>{{fileInfo.md5}}</code></td>-->
+                    <td>
+                        <b-form-input type="text" placeholder="url"
+                                      :value="window.location.protocol+'//'+window.location.host+fileInfo.url"></b-form-input>
+                    </td>
                     <td>
                         <button class="btn btn-outline-danger" type="button"
                                 v-if="fileInfo.isFile" @click="deleteFile(index)">
@@ -83,17 +88,23 @@
             <tr>
                 <th scope="col">name</th>
                 <th scope="col">size</th>
-                <th scope="col">count</th>
-                <th scope="col">md5</th>
+                <!--<th scope="col">count</th>-->
+                <!--<th scope="col">md5</th>-->
+                <th scope="col">url</th>
                 <th scope="col">delete</th>
             </tr>
             </thead>
             <tbody>
             <tr v-for="(fileInfo, index) in fileInfos">
-                <td><a href="javascript:;" @click="openFile(index)">{{fileInfo.name}}</a></td>
+                <td><a :href="fileInfo.isFile?fileInfo.url:'javascript:;'"
+                       @click="openFile(index)">{{fileInfo.name}}</a></td>
                 <td>{{fileInfo.fileSize}}</td>
-                <td>{{fileInfo.fileCount}}</td>
-                <td><code>{{fileInfo.md5}}</code></td>
+                <!--<td>{{fileInfo.fileCount}}</td>-->
+                <!--<td><code>{{fileInfo.md5}}</code></td>-->
+                <td>
+                    <b-form-input type="text" placeholder="url" v-if="fileInfo.isFile"
+                                  :value="window.location.protocol+'//'+window.location.host+fileInfo.url"></b-form-input>
+                </td>
                 <td>
                     <button class="btn btn-outline-danger" type="button"
                             v-if="fileInfo.isFile" @click="deleteFile(index)">
@@ -112,7 +123,7 @@
 <script src="//cdn.bootcss.com/axios/0.19.0-beta.1/axios.min.js"></script>
 
 <script>
-    window.onbeforeunload = (event) => 'maybe some data not save'
+    // window.onbeforeunload = (event) => 'maybe some data not save'
 
     const loginVue = new Vue({
         el: '#loginForm',
@@ -162,8 +173,7 @@
                         if (result.code == 1) {
                             this.sort = ""
                             this.file = null
-                            result.data.fileSize = readablizeBytes(result.data.fileSize)
-                            this.fileInfos.unshift(result.data)
+                            this.fileInfos.unshift(formatFileOrFolderInfo(result.data))
                         }
                     })
                     .catch(error => alert("error: " + JSON.stringify(error)))
@@ -179,8 +189,7 @@
                         if (result.code == 1) {
                             this.sort = ""
                             this.url = null
-                            result.data.fileSize = readablizeBytes(result.data.fileSize)
-                            this.fileInfos.unshift(result.data)
+                            this.fileInfos.unshift(formatFileOrFolderInfo(result.data))
                         }
                     })
                     .catch(error => alert("error: " + JSON.stringify(error)))
@@ -207,7 +216,7 @@
             openFile: function (index) {
                 var fileInfo = this.fileInfos[index]
                 if (fileInfo.isFile) {
-                    window.open(fileInfo.url)
+                    // window.open(fileInfo.url)
                     return
                 }
                 this.gotoFolder(fileInfo.path)
@@ -245,7 +254,7 @@
                                 return info1.path - info2.path
                             })
                             for (let i = 0; i < folderVue.fileInfos.length; i++) {
-                                folderVue.fileInfos[i].fileSize = readablizeBytes(folderVue.fileInfos[i].fileSize)
+                                folderVue.fileInfos[i] = formatFileOrFolderInfo(folderVue.fileInfos[i])
                             }
                         } else {
                             window.alert(result.massage)
@@ -278,6 +287,12 @@
         }
     })
 
+    function formatFileOrFolderInfo(fileOrFolderInfo) {
+        fileOrFolderInfo.fileSize = formatFileSize(fileOrFolderInfo.fileSize)
+        console.log(fileOrFolderInfo)
+        return fileOrFolderInfo
+    }
+
     function deleteFile(fileInfos, index) {
         if (!fileInfos[index].isFile) {
             window.alert("not file")
@@ -297,7 +312,7 @@
             .catch(error => alert("error: " + JSON.stringify(error)))
     }
 
-    function readablizeBytes(bytes) {
+    function formatFileSize(bytes) {
         var s = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
         var e = Math.floor(Math.log(bytes) / Math.log(1024));
         return (bytes / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + s[e];
