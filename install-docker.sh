@@ -32,7 +32,7 @@ EOF
 
 wget -c -O $dockerfileFilename "https://raw.githubusercontent.com/cellargalaxy/goFileBed/master/Dockerfile"
 
-wget -c -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.1.2/goFileBed-linux"
+wget -c -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.1.3/goFileBed-linux"
 
 if [ ! -f $dockerfileFilename ]; then
     echo 'Dockerfile not exist'
@@ -52,10 +52,15 @@ chmod 755 ./$goFileBedFilename
 
 echo 'docker build'
 docker build -t go_file_bed .
+echo 'docker create volume'
+docker volume create file_bed
 echo 'docker run'
-docker run -d --name go_file_bed --volumes-from file_bed -p $listenPort:8880 go_file_bed
+docker run -d --name go_file_bed -v file_bed:/file_bed -p $listenPort:8880 go_file_bed
 
 echo 'clear file'
 rm -rf $dockerfileFilename
 rm -rf $goFileBedConfigFilename
 rm -rf $goFileBedFilename
+echo 'clear file finish'
+
+echo 'all finish'

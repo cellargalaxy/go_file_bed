@@ -96,7 +96,7 @@
             </thead>
             <tbody>
             <tr v-for="(fileInfo, index) in fileInfos">
-                <td><a :href="fileInfo.isFile?fileInfo.url:'javascript:;'"
+                <td><a :target="fileInfo.isFile?'_blank':''" :href="fileInfo.isFile?fileInfo.url:'javascript:;'"
                        @click="openFile(index)">{{fileInfo.name}}</a></td>
                 <td>{{fileInfo.fileSize}}</td>
                 <!--<td>{{fileInfo.fileCount}}</td>-->
@@ -289,7 +289,6 @@
 
     function formatFileOrFolderInfo(fileOrFolderInfo) {
         fileOrFolderInfo.fileSize = formatFileSize(fileOrFolderInfo.fileSize)
-        console.log(fileOrFolderInfo)
         return fileOrFolderInfo
     }
 
