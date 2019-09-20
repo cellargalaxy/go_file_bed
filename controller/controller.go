@@ -10,19 +10,18 @@ import (
 	"github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"os"
 )
 
 var log = logrus.New()
 var secretKey = "secret"
 var secret = uuid.Must(uuid.NewV4()).String()
 var fileBedPath = config.GetConfig().FileBedPath
-
-func init() {
-	os.MkdirAll(fileBedPath, 0666)
-}
+var listenAddress = config.GetConfig().ListenAddress
 
 func Controller() {
+	log.WithFields(logrus.Fields{"fileBedPath": fileBedPath}).Info("文件床路径")
+	log.WithFields(logrus.Fields{"listenAddress": listenAddress}).Info("监听地址")
+
 	store := cookie.NewStore([]byte(secret))
 
 	engine := gin.Default()
@@ -32,14 +31,18 @@ func Controller() {
 	engine.Static(service.FileUrl, fileBedPath)
 	engine.POST(service.LoginUrl, loginController)
 
-	engine.POST(service.UploadFileUrl, validate, uploadFileController)
 	engine.POST(service.UploadUrlUrl, validate, uploadUrlController)
+	engine.POST(service.UploadFileUrl, validate, uploadFileController)
+	engine.POST(service.UploadFileByFilePathUrl, validate, uploadFileByFilePathController)
 	engine.POST(service.RemoveFileUrl, validate, removeFileController)
-	engine.POST(service.ClearAllCacheUrl, validate, clearAllCacheController)
-	engine.GET(service.ListFileOrFolderInfoUrl, validate, listFileOrFolderInfoController)
+	engine.GET(service.ListFolderInfoUrl, validate, listFolderInfoController)
 	engine.GET(service.ListAllFileInfoUrl, validate, listAllFileInfoController)
+	engine.POST(service.ReceivePushSynFileUrl, validate, receivePushSynFileController)
+	engine.POST(service.PushSynFileUrl, validate, pushSynFileController)
+	engine.POST(service.PullSynFileUrl, validate, pullSynFileController)
+	engine.POST(service.ClearAllCacheUrl, validate, clearAllCacheController)
 
-	engine.Run(config.GetConfig().ListenAddress)
+	engine.Run(listenAddress)
 }
 
 func validate(context *gin.Context) {
@@ -76,6 +79,62 @@ func loginController(context *gin.Context) {
 	}
 }
 
+func uploadUrlController(context *gin.Context) {
+	sort := context.Request.FormValue("sort")
+	url := context.Request.FormValue("url")
+	log.WithFields(logrus.Fields{"sort": sort, "url": url}).Info("上传url文件")
+
+	fileInfo, err := service.AddUrl(sort, url)
+	if err != nil {
+		context.JSON(http.StatusOK, createFailResponse(err.Error()))
+	} else {
+		context.JSON(http.StatusOK, createSuccessResponse("upload file success", fileInfo))
+	}
+}
+
+func uploadFileController(context *gin.Context) {
+	sort := context.Request.FormValue("sort")
+	file, header, err := context.Request.FormFile("file")
+	if err != nil {
+		context.JSON(http.StatusOK, createFailResponse(err.Error()))
+		return
+	}
+
+	filename := ""
+	if header != nil {
+		filename = header.Filename
+	}
+	if filename == "" {
+		filename = uuid.Must(uuid.NewV4()).String()
+	}
+	log.WithFields(logrus.Fields{"sort": sort, "filename": filename}).Info("上传文件")
+
+	fileInfo, err := service.AddFile(sort, filename, file)
+	if err != nil {
+		context.JSON(http.StatusOK, createFailResponse(err.Error()))
+	} else {
+		context.JSON(http.StatusOK, createSuccessResponse("upload file success", fileInfo))
+	}
+}
+
+func uploadFileByFilePathController(context *gin.Context) {
+	filePath := context.Request.FormValue("filePath")
+	file, _, err := context.Request.FormFile("file")
+	if err != nil {
+		context.JSON(http.StatusOK, createFailResponse(err.Error()))
+		return
+	}
+
+	log.WithFields(logrus.Fields{"filePath": filePath}).Info("上传文件")
+
+	fileInfo, err := service.AddFileByFilePath(filePath, file)
+	if err != nil {
+		context.JSON(http.StatusOK, createFailResponse(err.Error()))
+	} else {
+		context.JSON(http.StatusOK, createSuccessResponse("upload file success", fileInfo))
+	}
+}
+
 func removeFileController(context *gin.Context) {
 	filePath := context.Request.FormValue("filePath")
 	log.WithFields(logrus.Fields{"filePath": filePath}).Info("删除文件")
@@ -88,14 +147,15 @@ func removeFileController(context *gin.Context) {
 	}
 }
 
-func clearAllCacheController(context *gin.Context) {
-	log.Info("清除全部缓存")
+func listFolderInfoController(context *gin.Context) {
+	folderPath := context.Query("folderPath")
+	log.WithFields(logrus.Fields{"folderPath": folderPath}).Info("查询文件")
 
-	err := service.ClearAllCache()
+	fileOrFolderInfos, err := service.ListFolderInfo(folderPath)
 	if err != nil {
 		context.JSON(http.StatusOK, createFailResponse(err.Error()))
 	} else {
-		context.JSON(http.StatusOK, createSuccessResponse("clear all cache success", nil))
+		context.JSON(http.StatusOK, createSuccessResponse("", fileOrFolderInfos))
 	}
 }
 
@@ -110,51 +170,55 @@ func listAllFileInfoController(context *gin.Context) {
 	}
 }
 
-func listFileOrFolderInfoController(context *gin.Context) {
-	fileOrFolderPath := context.Query("fileOrFolderPath")
-	log.WithFields(logrus.Fields{"fileOrFolderPath": fileOrFolderPath}).Info("查询文件")
-
-	fileOrFolderInfos, err := service.ListFileOrFolderInfo(fileOrFolderPath)
-	if err != nil {
-		context.JSON(http.StatusOK, createFailResponse(err.Error()))
-	} else {
-		context.JSON(http.StatusOK, createSuccessResponse("", fileOrFolderInfos))
-	}
-}
-
-func uploadFileController(context *gin.Context) {
-	sort := context.Request.FormValue("sort")
-	file, header, err := context.Request.FormFile("file")
-	filename := ""
-	if header != nil {
-		filename = header.Filename
-	}
-	log.WithFields(logrus.Fields{"sort": sort, "filename": filename}).Info("上传文件")
-
+func receivePushSynFileController(context *gin.Context) {
+	filePath := context.Request.FormValue("filePath")
+	md5 := context.Request.FormValue("md5")
+	file, _, err := context.Request.FormFile("file")
 	if err != nil {
 		context.JSON(http.StatusOK, createFailResponse(err.Error()))
 		return
 	}
+	log.WithFields(logrus.Fields{"filePath": filePath, "md5": md5}).Info("接收推送同步文件")
 
-	fileInfo, err := service.AddFile(sort, filename, file)
+	err = service.ReceivePushSynFile(filePath, md5, file)
 	if err != nil {
 		context.JSON(http.StatusOK, createFailResponse(err.Error()))
 	} else {
-		context.JSON(http.StatusOK, createSuccessResponse("upload file success", fileInfo))
+		context.JSON(http.StatusOK, createSuccessResponse("", nil))
 	}
 }
 
-func uploadUrlController(context *gin.Context) {
-	sort := context.Request.FormValue("sort")
-	url := context.Request.FormValue("url")
-	log.WithFields(logrus.Fields{"sort": sort, "url": url}).Info("上传url文件")
+func pushSynFileController(context *gin.Context) {
+	pushSynHost := context.Request.FormValue("pushSynHost")
+	token := context.Request.FormValue("token")
+	log.WithFields(logrus.Fields{"pushSynHost": pushSynHost}).Info("推送同步文件")
 
-	fileInfo, err := service.AddUrl(sort, url)
+	failCount, err := service.PushSynFile(pushSynHost, token)
 	if err != nil {
-		context.JSON(http.StatusOK, createFailResponse(err.Error()))
+		context.JSON(http.StatusOK, createResponse(model.FailCode, "", map[string]interface{}{"failCount": failCount, "err": err}))
 	} else {
-		context.JSON(http.StatusOK, createSuccessResponse("upload file success", fileInfo))
+		context.JSON(http.StatusOK, createSuccessResponse("", map[string]interface{}{"failCount": failCount, "err": err}))
 	}
+}
+
+func pullSynFileController(context *gin.Context) {
+	pullSynHost := context.Request.FormValue("pullSynHost")
+	token := context.Request.FormValue("token")
+	log.WithFields(logrus.Fields{"pullSynHost": pullSynHost}).Info("拉取同步文件")
+
+	failCount, err := service.PullSynFile(pullSynHost, token)
+	if err != nil {
+		context.JSON(http.StatusOK, createResponse(model.FailCode, "", map[string]interface{}{"failCount": failCount, "err": err}))
+	} else {
+		context.JSON(http.StatusOK, createSuccessResponse("", map[string]interface{}{"failCount": failCount, "err": err}))
+	}
+}
+
+func clearAllCacheController(context *gin.Context) {
+	log.Info("清除全部缓存")
+
+	service.ClearAllCache()
+	context.JSON(http.StatusOK, createSuccessResponse("clear all cache success", nil))
 }
 
 func createSuccessResponse(massage string, data interface{}) map[string]interface{} {

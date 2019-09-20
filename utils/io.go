@@ -45,32 +45,6 @@ func CreateFile(filePath string) (*os.File, error) {
 	return os.Create(filePath)
 }
 
-func GetFileOrFolderInfo(fileOrFolderPath string) (int32, int64, os.FileInfo, error) {
-	existAndIsFile, fileInfo := ExistAndIsFile(fileOrFolderPath)
-	if existAndIsFile {
-		return 1, fileInfo.Size(), fileInfo, nil
-	}
-	existAndIsFolder, fileInfo := ExistAndIsFolder(fileOrFolderPath)
-	if !existAndIsFolder {
-		return 0, -1, nil, errors.New(fmt.Sprintf("路径不存在: %v", fileOrFolderPath))
-	}
-	files, err := ioutil.ReadDir(fileOrFolderPath)
-	if err != nil {
-		return 0, -1, nil, err
-	}
-	var folderCount int32 = 0
-	var folderSize int64 = 0
-	for i := range files {
-		count, size, _, err := GetFileOrFolderInfo(path.Join(fileOrFolderPath, files[i].Name()))
-		if err != nil {
-			continue
-		}
-		folderCount += count
-		folderSize += size
-	}
-	return folderCount, folderSize, fileInfo, nil
-}
-
 func ClearPath(fileOrFolderPath string) string {
 	fileOrFolderPath = strings.ReplaceAll(fileOrFolderPath, "\\", "/")
 	return path.Clean(fileOrFolderPath)
@@ -119,7 +93,8 @@ const StaticFileBuildPath = StaticFileBuildPackageName + "/staticFileBuild.go"
 
 func BuildStaticFile(fileOrFolderPaths ...string) error {
 	for i := range fileOrFolderPaths {
-		if err := BuildOneStaticFile(fileOrFolderPaths[i]); err != nil {
+		err := BuildOneStaticFile(fileOrFolderPaths[i])
+		if err != nil {
 			return err
 		}
 	}
@@ -127,24 +102,6 @@ func BuildStaticFile(fileOrFolderPaths ...string) error {
 }
 
 func BuildOneStaticFile(fileOrFolderPath string) error {
-	existAndIsFile, _ := ExistAndIsFile(fileOrFolderPath)
-	if existAndIsFile {
-		byteArray, err := ioutil.ReadFile(fileOrFolderPath)
-		if err != nil {
-			return err
-		}
-		base64String, err := ByteArrayToGzipToBase64(byteArray)
-		if err != nil {
-			return err
-		}
-		return writeBuildStaticFile(map[string]string{fileOrFolderPath: base64String})
-	}
-
-	existAndIsFolder, _ := ExistAndIsFolder(fileOrFolderPath)
-	if !existAndIsFolder {
-		return errors.New(fmt.Sprintf("路径不存在: %v", fileOrFolderPath))
-	}
-
 	fileInfoMap, err := GetAllFileInfoFromFolder(fileOrFolderPath)
 	if err != nil {
 		return err
@@ -223,9 +180,8 @@ func OutputStaticFile(base64Map map[string]string) error {
 		if err != nil {
 			return err
 		}
-		defer writer.Close()
-
 		_, err = writer.Write(byteArray)
+		writer.Close()
 		if err != nil {
 			return err
 		}

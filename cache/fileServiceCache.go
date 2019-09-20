@@ -1,59 +1,66 @@
 package cache
 
 import (
-	"../config"
 	"../model"
-	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 )
 
 var log = logrus.New()
-var fileBedPath = config.GetConfig().FileBedPath
-var cache sync.Map
-var selectAllFileKey = uuid.Must(uuid.NewV4()).String()
+var FileCache sync.Map
+var FolderCache sync.Map
 
-func DeleteFileOrFolderInfo(filePath string) {
-	cache.Delete(selectAllFileKey)
-	cache.Range(func(fileOrFolderPath, _ interface{}) bool {
-		if strings.HasPrefix(filePath, fileOrFolderPath.(string)) {
-			log.WithFields(logrus.Fields{"fileOrFolderPath": fileOrFolderPath}).Info("删除缓存")
-			cache.Delete(fileOrFolderPath)
-		}
-		return true
-	})
+func InsertFileCache(filePath string, fileOrFolderInfos []model.FileOrFolderInfo) {
+	if fileOrFolderInfos == nil || len(fileOrFolderInfos) == 0 {
+		log.Info("fileOrFolderInfos为nil或者长度为0")
+		return
+	}
+	FileCache.Store(filePath, fileOrFolderInfos)
 }
 
-func SelectListFileOrFolderInfo(fileOrFolderPath string) []model.FileOrFolderInfo {
-	fileOrFolderInfos, _ := cache.Load(fileOrFolderPath)
+func SelectFileCache(filePath string) []model.FileOrFolderInfo {
+	fileOrFolderInfos, _ := FileCache.Load(filePath)
 	if fileOrFolderInfos == nil {
 		return nil
 	}
 	return fileOrFolderInfos.([]model.FileOrFolderInfo)
 }
 
-func InsertListFileOrFolderInfo(fileOrFolderPath string, fileOrFolderInfos []model.FileOrFolderInfo) {
-	if fileOrFolderPath != "" && fileOrFolderInfos != nil {
-		cache.Store(fileOrFolderPath, fileOrFolderInfos)
+func InsertFolderCache(folderPath string, fileOrFolderInfos []model.FileOrFolderInfo) {
+	if fileOrFolderInfos == nil || len(fileOrFolderInfos) == 0 {
+		log.Info("fileOrFolderInfos为nil或者长度为0")
+		return
 	}
+	FolderCache.Store(folderPath, fileOrFolderInfos)
 }
 
-func SelectListAllFileInfo() []model.FileOrFolderInfo {
-	fileInfos, _ := cache.Load(selectAllFileKey)
-	if fileInfos == nil {
+func SelectFolderCache(folderPath string) []model.FileOrFolderInfo {
+	fileOrFolderInfos, _ := FolderCache.Load(folderPath)
+	if fileOrFolderInfos == nil {
 		return nil
 	}
-	return fileInfos.([]model.FileOrFolderInfo)
+	return fileOrFolderInfos.([]model.FileOrFolderInfo)
 }
 
-func InsertListAllFileInfo(fileOrFolderInfos []model.FileOrFolderInfo) {
-	if fileOrFolderInfos != nil {
-		cache.Store(selectAllFileKey, fileOrFolderInfos)
-	}
+func DeleteCache(fileOrFolderPath string) {
+	FileCache.Range(func(filePath, _ interface{}) bool {
+		if strings.HasPrefix(fileOrFolderPath, filePath.(string)) {
+			log.WithFields(logrus.Fields{"filePath": filePath}).Info("删除文件缓存")
+			FileCache.Delete(filePath)
+		}
+		return true
+	})
+	FolderCache.Range(func(folderPath, _ interface{}) bool {
+		if strings.HasPrefix(fileOrFolderPath, folderPath.(string)) {
+			log.WithFields(logrus.Fields{"folderPath": folderPath}).Info("删除文件夹缓存")
+			FolderCache.Delete(folderPath)
+		}
+		return true
+	})
 }
 
-func ClearAllCache() error {
-	cache = sync.Map{}
-	return nil
+func ClearAllCache() {
+	FileCache = sync.Map{}
+	FolderCache = sync.Map{}
 }

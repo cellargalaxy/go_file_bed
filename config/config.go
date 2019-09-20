@@ -10,7 +10,6 @@ import (
 
 type Config struct {
 	Token         string `yaml:"token"`
-	SynUrl        string `yaml:"synUrl"`
 	ListenAddress string `yaml:"listenAddress"`
 	FileBedPath   string `yaml:"fileBedPath"`
 }
@@ -18,10 +17,27 @@ type Config struct {
 const configFilePath string = "config.yml"
 
 var log = logrus.New()
-var config = Config{"token", "http://127.0.0.1:8880", "0.0.0.0:8880", "file_bed"}
+var config = Config{"token", "0.0.0.0:8880", "file_bed"}
 
 func init() {
 	log.Info("加载配置文件")
+	token := os.Getenv("TOKEN")
+	if token != "" {
+		config.Token = token
+	}
+	listenAddress := os.Getenv("LISTEN_ADDRESS")
+	if listenAddress != "" {
+		config.ListenAddress = listenAddress
+	}
+	fileBedPath := os.Getenv("FILE_BED_PATH")
+	if fileBedPath != "" {
+		config.FileBedPath = fileBedPath
+	}
+	if token != "" && listenAddress != "" && fileBedPath != "" {
+		log.Info("从环境变量加载配置文件成功")
+		return
+	}
+
 	existAndIsFile, _ := utils.ExistAndIsFile(configFilePath)
 	if !existAndIsFile {
 		writer, err := utils.CreateFile(configFilePath)
@@ -39,6 +55,7 @@ func init() {
 		log.Info("成功创建初始化配置文件，请填写配置文件后再启动")
 		os.Exit(0)
 	}
+
 	bytes, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		log.WithFields(logrus.Fields{"configFilePath": configFilePath, "err": err}).Panic("读取配置文件失败")

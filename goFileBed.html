@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
 <head>
     <meta charset="UTF-8">
     <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap/dist/css/bootstrap.min.css"/>
@@ -10,70 +10,78 @@
 <div class="container">
 
     <b-input-group id="loginForm">
-        <b-form-input type="password" :placeholder="isLogin?'logined':'token'" v-model="token"></b-form-input>
-        <button class="btn btn-outline-primary" type="button" @click="login">login</button>
+        <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
+        <b-button size="sm" variant="outline-primary" @click="login">login</b-button>
     </b-input-group>
 
-    <hr/>
-    <hr/>
+    <br/>
 
     <form id="uploadForm">
         <b-input-group>
-            <b-form-file v-model="file"></b-form-file>
+            <b-form-file size="sm" v-model="file"></b-form-file>
         </b-input-group>
         <b-input-group>
-            <b-form-input type="text" placeholder="sort" v-model="sort"></b-form-input>
-            <button class="btn btn-outline-primary" type="button" @click="uploadFile">upload</button>
+            <b-form-input size="sm" type="text" placeholder="sort" v-model="sort"></b-form-input>
+            <b-button size="sm" variant="outline-primary" @click="uploadFile">upload</b-button>
         </b-input-group>
         <br/>
         <b-input-group>
-            <b-form-input type="text" placeholder="url" v-model="url"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="url" v-model="url"></b-form-input>
         </b-input-group>
         <b-input-group>
-            <b-form-input type="text" placeholder="sort" v-model="sort"></b-form-input>
-            <button class="btn btn-outline-primary" type="button" @click="uploadUrl">upload</button>
+            <b-form-input size="sm" type="text" placeholder="sort" v-model="sort"></b-form-input>
+            <b-button size="sm" variant="outline-primary" @click="uploadUrl">upload</b-button>
         </b-input-group>
         <br/>
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th scope="col">name</th>
-                    <th scope="col">size</th>
-                    <!--<th scope="col">count</th>-->
-                    <!--<th scope="col">md5</th>-->
-                    <th scope="col">url</th>
-                    <th scope="col">delete</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="(fileInfo, index) in fileInfos">
-                    <td><a target="_blank" :href="fileInfo.url">{{fileInfo.name}}</a></td>
-                    <td>{{fileInfo.fileSize}}</td>
-                    <!--<td>{{fileInfo.fileCount}}</td>-->
-                    <!--<td><code>{{fileInfo.md5}}</code></td>-->
-                    <td>
-                        <b-form-input type="text" placeholder="url"
-                                      :value="window.location.protocol+'//'+window.location.host+fileInfo.url"></b-form-input>
-                    </td>
-                    <td>
-                        <button class="btn btn-outline-danger" type="button"
-                                v-if="fileInfo.isFile" @click="deleteFile(index)">
-                            delete
-                        </button>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+        <b-input-group>
+            <b-form-file size="sm" v-model="file"></b-form-file>
+        </b-input-group>
+        <b-input-group>
+            <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
+            <b-button size="sm" variant="outline-primary" @click="uploadFileByFilePath">upload</b-button>
+        </b-input-group>
+        <b-table responsive small striped :busy="loading" :fields="fields" :items="fileInfos">
+            <template v-slot:cell(name)="data">
+                <a :target="data.item.isFile?'_blank':''" :href="data.item.isFile?data.item.url:'javascript:;'"
+                   @click="openFile(data.index)">{{data.item.name}}</a>
+            </template>
+            <template v-slot:cell(url)="data">
+                <b-form-input size="sm" type="text" placeholder="url" v-if="data.item.isFile"
+                              :value="window.location.protocol+'//'+window.location.host+data.item.url"></b-form-input>
+            </template>
+            <template v-slot:cell(delete)="data">
+                <b-button size="sm" variant="outline-danger" v-if="data.item.isFile" @click="deleteFile(data.index)">
+                    delete
+                </b-button>
+            </template>
+
+            <template v-slot:table-busy>
+                <div class="text-center text-danger my-2">
+                    <b-spinner class="align-middle"></b-spinner>
+                    <strong>Loading...</strong>
+                </div>
+            </template>
+        </b-table>
     </form>
 
-    <hr/>
-    <hr/>
+
+    <form id="synForm">
+        <b-input-group>
+            <b-form-input size="sm" type="text" placeholder="pushSynHost" v-model="pushSynHost"></b-form-input>
+            <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
+            <b-button size="sm" variant="outline-primary" :disabled="pushing" @click="pushSynFile">push syn</b-button>
+        </b-input-group>
+        <b-input-group>
+            <b-form-input size="sm" type="text" placeholder="pullSynHost" v-model="pullSynHost"></b-form-input>
+            <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
+            <b-button size="sm" variant="outline-primary" :disabled="pulling" @click="pullSynFile">pull syn</b-button>
+        </b-input-group>
+    </form>
+
 
     <div class="table-responsive" id="folderTable">
         <b-button-group>
-            <b-button variant="btn btn-outline-warning" @click="clearAllCache">clear all cache</b-button>
+            <b-button size="sm" variant="btn btn-outline-warning" @click="clearAllCache">clear all cache</b-button>
         </b-button-group>
 
         <nav aria-label="breadcrumb">
@@ -83,37 +91,28 @@
             </ol>
         </nav>
 
-        <table class="table">
-            <thead>
-            <tr>
-                <th scope="col">name</th>
-                <th scope="col">size</th>
-                <!--<th scope="col">count</th>-->
-                <!--<th scope="col">md5</th>-->
-                <th scope="col">url</th>
-                <th scope="col">delete</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-for="(fileInfo, index) in fileInfos">
-                <td><a :target="fileInfo.isFile?'_blank':''" :href="fileInfo.isFile?fileInfo.url:'javascript:;'"
-                       @click="openFile(index)">{{fileInfo.name}}</a></td>
-                <td>{{fileInfo.fileSize}}</td>
-                <!--<td>{{fileInfo.fileCount}}</td>-->
-                <!--<td><code>{{fileInfo.md5}}</code></td>-->
-                <td>
-                    <b-form-input type="text" placeholder="url" v-if="fileInfo.isFile"
-                                  :value="window.location.protocol+'//'+window.location.host+fileInfo.url"></b-form-input>
-                </td>
-                <td>
-                    <button class="btn btn-outline-danger" type="button"
-                            v-if="fileInfo.isFile" @click="deleteFile(index)">
-                        delete
-                    </button>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+        <b-table responsive small striped :busy="loading" :fields="fields" :items="fileInfos">
+            <template v-slot:cell(name)="data">
+                <a :target="data.item.isFile?'_blank':''" :href="data.item.isFile?data.item.url:'javascript:;'"
+                   @click="openFile(data.index)">{{data.item.name}}</a>
+            </template>
+            <template v-slot:cell(url)="data">
+                <b-form-input size="sm" type="text" placeholder="url" v-if="data.item.isFile"
+                              :value="window.location.protocol+'//'+window.location.host+data.item.url"></b-form-input>
+            </template>
+            <template v-slot:cell(delete)="data">
+                <b-button size="sm" variant="outline-danger" v-if="data.item.isFile" @click="deleteFile(data.index)">
+                    delete
+                </b-button>
+            </template>
+
+            <template v-slot:table-busy>
+                <div class="text-center text-danger my-2">
+                    <b-spinner class="align-middle"></b-spinner>
+                    <strong>Loading...</strong>
+                </div>
+            </template>
+        </b-table>
     </div>
 
 </div>
@@ -123,26 +122,29 @@
 <script src="//cdn.bootcss.com/axios/0.19.0-beta.1/axios.min.js"></script>
 
 <script>
-    // window.onbeforeunload = (event) => 'maybe some data not save'
+    window.onbeforeunload = (event) => 'maybe some data not save'
+
+    var instance = axios.create({timeout: 60 * 60 * 1000});
 
     const loginVue = new Vue({
         el: '#loginForm',
         data: {
             token: null,
-            isLogin: false
         },
         methods: {
             login: function () {
-                axios.post("/login", Qs.stringify({token: this.token}))
+                if (this.token == null || this.token == "") {
+                    this.token = ""
+                    window.alert('token is empty')
+                    return
+                }
+                instance.post("/login", Qs.stringify({token: this.token}))
                     .then(response => {
                         const result = response.data
                         window.alert(result.massage)
                         if (result.code == 1) {
                             this.token = null
-                            this.isLogin = true
-                            folderVue.listFileOrFolderInfo()
-                        } else {
-                            this.isLogin = false
+                            folderVue.listFolderInfo()
                         }
                     })
                     .catch(error => window.alert("error: " + JSON.stringify(error)))
@@ -154,26 +156,55 @@
         el: '#uploadForm',
         data: {
             sort: "",
-            file: null,
             url: null,
+            filePath: null,
+            file: null,
             fileInfos: [],
+            fields: [
+                {
+                    key: 'name',
+                    label: 'name',
+                    sortable: true,
+                },
+                {
+                    key: 'size',
+                    label: 'size',
+                    sortable: true,
+                },
+                {
+                    key: 'url',
+                    label: 'url',
+                },
+                {
+                    key: 'delete',
+                    label: 'delete',
+                },
+            ],
+            loading: false,
         },
         methods: {
             uploadFile: function () {
                 if (this.sort == null) {
                     this.sort = ""
                 }
+                if (this.file == null) {
+                    window.alert('file is empty')
+                    return
+                }
                 const param = new FormData()
                 param.append("sort", this.sort)
                 param.append("file", this.file)
-                axios.post("/admin/uploadFile", param, {headers: {'Content-Type': 'multipart/form-data'}})
+                instance.post("/admin/uploadFile", param, {headers: {'Content-Type': 'multipart/form-data'}})
                     .then(response => {
                         const result = response.data
                         window.alert(result.massage)
                         if (result.code == 1) {
                             this.sort = ""
                             this.file = null
-                            this.fileInfos.unshift(formatFileOrFolderInfo(result.data))
+                            for (let i = 0; i < result.data.length; i++) {
+                                this.fileInfos.unshift(formatFileOrFolderInfo(result.data[i]))
+                            }
+                            folderVue.listFolderInfo()
                         }
                     })
                     .catch(error => alert("error: " + JSON.stringify(error)))
@@ -182,20 +213,120 @@
                 if (this.sort == null) {
                     this.sort = ""
                 }
-                axios.post("/admin/uploadUrl", Qs.stringify({sort: this.sort, url: this.url}))
+                if (this.file == null) {
+                    window.alert('file is empty')
+                    return
+                }
+                instance.post("/admin/uploadUrl", Qs.stringify({sort: this.sort, url: this.url}))
                     .then(response => {
                         const result = response.data
                         window.alert(result.massage)
                         if (result.code == 1) {
                             this.sort = ""
                             this.url = null
-                            this.fileInfos.unshift(formatFileOrFolderInfo(result.data))
+                            for (let i = 0; i < result.data.length; i++) {
+                                this.fileInfos.unshift(formatFileOrFolderInfo(result.data[i]))
+                            }
+                            folderVue.listFolderInfo()
+                        }
+                    })
+                    .catch(error => alert("error: " + JSON.stringify(error)))
+            },
+            uploadFileByFilePath: function () {
+                if (this.filePath == null || this.filePath == "") {
+                    this.filePath = ""
+                    window.alert('filePath is empty')
+                    return
+                }
+                if (this.file == null) {
+                    window.alert('file is empty')
+                    return
+                }
+                const param = new FormData()
+                param.append("filePath", this.filePath)
+                param.append("file", this.file)
+                instance.post("/admin/uploadFileByFilePath", param, {headers: {'Content-Type': 'multipart/form-data'}})
+                    .then(response => {
+                        const result = response.data
+                        window.alert(result.massage)
+                        if (result.code == 1) {
+                            this.sort = ""
+                            this.file = null
+                            for (let i = 0; i < result.data.length; i++) {
+                                this.fileInfos.unshift(formatFileOrFolderInfo(result.data[i]))
+                            }
+                            folderVue.listFolderInfo()
                         }
                     })
                     .catch(error => alert("error: " + JSON.stringify(error)))
             },
             deleteFile: function (index) {
                 deleteFile(this.fileInfos, index)
+            },
+        }
+    })
+
+    const synVue = new Vue({
+        el: '#synForm',
+        data: {
+            pushSynHost: "",
+            pullSynHost: "",
+            token: "",
+            pushing: false,
+            pulling: false,
+        },
+        methods: {
+            pushSynFile: function () {
+                if (this.pushSynHost == null || this.pushSynHost == "") {
+                    this.pushSynHost = ""
+                    window.alert('pushSynHost is empty')
+                    return
+                }
+                if (this.token == null || this.token == "") {
+                    this.token = ""
+                    window.alert('token is empty')
+                    return
+                }
+                this.pushing = true
+                instance.post("/admin/pushSynFile", Qs.stringify({pushSynHost: this.pushSynHost, token: this.token}))
+                    .then(response => {
+                        synVue.pushing = false
+                        const result = response.data
+                        window.alert('push syn ' + (result.code == 1 ? 'success' : 'fail') +
+                            '\nmassage: ' + result.massage +
+                            '\nfail count: ' + result.data.failCount +
+                            '\nerr: ' + JSON.stringify(result.data.err))
+                    })
+                    .catch(error => {
+                        synVue.pushing = false
+                        alert("error: " + JSON.stringify(error))
+                    })
+            },
+            pullSynFile: function () {
+                if (this.pullSynHost == null || this.pullSynHost == "") {
+                    this.pullSynHost = ""
+                    window.alert('pullSynHost is empty')
+                    return
+                }
+                if (this.token == null || this.token == "") {
+                    this.token = ""
+                    window.alert('token is empty')
+                    return
+                }
+                this.pulling = true
+                instance.post("/admin/pullSynFile", Qs.stringify({pullSynHost: this.pullSynHost, token: this.token}))
+                    .then(response => {
+                        synVue.pulling = false
+                        const result = response.data
+                        window.alert('pull syn ' + (result.code == 1 ? 'success' : 'fail') +
+                            '\nmassage: ' + result.massage +
+                            '\nfail count: ' + result.data.failCount +
+                            '\nerr: ' + JSON.stringify(result.data.err))
+                    })
+                    .catch(error => {
+                        synVue.pulling = false
+                        alert("error: " + JSON.stringify(error))
+                    })
             },
         }
     })
@@ -208,6 +339,27 @@
                 {name: "root", path: ""},
             ],
             fileInfos: [],
+            fields: [
+                {
+                    key: 'name',
+                    label: 'name',
+                    sortable: true,
+                },
+                {
+                    key: 'size',
+                    label: 'size',
+                    sortable: true,
+                },
+                {
+                    key: 'url',
+                    label: 'url',
+                },
+                {
+                    key: 'delete',
+                    label: 'delete',
+                },
+            ],
+            loading: false,
         },
         methods: {
             breadcrumbGo: function (index) {
@@ -216,7 +368,6 @@
             openFile: function (index) {
                 var fileInfo = this.fileInfos[index]
                 if (fileInfo.isFile) {
-                    // window.open(fileInfo.url)
                     return
                 }
                 this.gotoFolder(fileInfo.path)
@@ -236,36 +387,40 @@
                     fatherBreadcrumbIndex++
                 }
             },
-            listFileOrFolderInfo: function () {
-                this.fileInfos = []
-                axios.get("/admin/listFileOrFolderInfo", {params: {fileOrFolderPath: this.currentPath}})
+            listFolderInfo: function () {
+                this.loading = true
+                instance.get("/admin/listFolderInfo", {params: {folderPath: this.currentPath}})
                     .then(function (response) {
+                        folderVue.loading = false
                         const result = response.data
-                        if (result.code == 1) {
-                            if (result.data == null || result.data.length == 0) {
-                                window.alert("this has not file or folder")
-                                result.data = []
-                            }
-                            folderVue.fileInfos = result.data
-                            folderVue.fileInfos.sort((info1, info2) => {
-                                if (info1.isFile != info2.isFile) {
-                                    return !info1.isFile ? -1 : 1
-                                }
-                                return info1.path - info2.path
-                            })
-                            for (let i = 0; i < folderVue.fileInfos.length; i++) {
-                                folderVue.fileInfos[i] = formatFileOrFolderInfo(folderVue.fileInfos[i])
-                            }
-                        } else {
+                        if (result.code != 1) {
                             window.alert(result.massage)
+                            return
+                        }
+                        if (result.data == null || result.data.length == 0) {
+                            window.alert("this has not file or folder")
+                            result.data = []
+                        }
+                        folderVue.fileInfos = result.data
+                        folderVue.fileInfos.sort((info1, info2) => {
+                            if (info1.isFile != info2.isFile) {
+                                return !info1.isFile ? -1 : 1
+                            }
+                            return info1.path - info2.path
+                        })
+                        for (let i = 0; i < folderVue.fileInfos.length; i++) {
+                            folderVue.fileInfos[i] = formatFileOrFolderInfo(folderVue.fileInfos[i])
                         }
                     })
-                    .catch(error => alert("error: " + JSON.stringify(error)))
+                    .catch(error => {
+                        folderVue.loading = false
+                        alert("error: " + JSON.stringify(error))
+                    })
             },
             gotoFolder: function (path) {
                 this.currentPath = path
                 this.setBreadcrumb()
-                this.listFileOrFolderInfo()
+                this.listFolderInfo()
             },
             deleteFile: function (index) {
                 deleteFile(this.fileInfos, index)
@@ -274,23 +429,18 @@
                 if (!window.confirm("sure clear all cache ?!?")) {
                     return
                 }
-                axios.post("/admin/clearAllCache", Qs.stringify({}))
+                instance.post("/admin/clearAllCache", Qs.stringify({}))
                     .then(response => {
                         const result = response.data
                         alert(result.massage)
                         if (result.code == 1) {
-                            this.listFileOrFolderInfo()
+                            this.listFolderInfo()
                         }
                     })
                     .catch(error => alert("error: " + JSON.stringify(error)))
             },
         }
     })
-
-    function formatFileOrFolderInfo(fileOrFolderInfo) {
-        fileOrFolderInfo.fileSize = formatFileSize(fileOrFolderInfo.fileSize)
-        return fileOrFolderInfo
-    }
 
     function deleteFile(fileInfos, index) {
         if (!fileInfos[index].isFile) {
@@ -300,7 +450,7 @@
         if (!window.confirm("sure delete file ?!?: " + fileInfos[index].path)) {
             return
         }
-        axios.post("/admin/removeFile", Qs.stringify({filePath: fileInfos[index].path}))
+        instance.post("/admin/removeFile", Qs.stringify({filePath: fileInfos[index].path}))
             .then(response => {
                 const result = response.data
                 alert(result.massage)
@@ -311,7 +461,19 @@
             .catch(error => alert("error: " + JSON.stringify(error)))
     }
 
+    function formatFileOrFolderInfo(fileOrFolderInfo) {
+        fileOrFolderInfo.size = formatFileSize(fileOrFolderInfo.fileSize)
+        fileOrFolderInfo.url = encodeURI(fileOrFolderInfo.url)
+        return fileOrFolderInfo
+    }
+
     function formatFileSize(bytes) {
+        if (bytes < 0) {
+            return '非法大小: ' + bytes
+        }
+        if (bytes == 0) {
+            return '0 B'
+        }
         var s = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
         var e = Math.floor(Math.log(bytes) / Math.log(1024));
         return (bytes / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + s[e];
