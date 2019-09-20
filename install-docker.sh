@@ -22,13 +22,21 @@ fi
 echo 'input any key go on,or control+c over'
 read
 
-wget -c -O $dockerfileFilename "https://raw.githubusercontent.com/cellargalaxy/goFileBed/master/Dockerfile"
+if [ ! -f $dockerfileFilename ]; then
+    wget -c -O $dockerfileFilename "https://raw.githubusercontent.com/cellargalaxy/goFileBed/master/Dockerfile"
+else
+    echo 'dockerfile exist'
+fi
 if [ ! -f $dockerfileFilename ]; then
     echo 'dockerfile not exist'
     exit 1
 fi
 
-wget -c -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.2.0/goFileBed-linux"
+if [ ! -f $goFileBedFilename ]; then
+    wget -c -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.2.0/goFileBed-linux"
+else
+    echo 'goFileBed exist'
+fi
 if [ ! -f $goFileBedFilename ]; then
     echo 'goFileBed not exist'
     exit 1
