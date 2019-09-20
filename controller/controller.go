@@ -99,6 +99,7 @@ func uploadFileController(context *gin.Context) {
 		context.JSON(http.StatusOK, createFailResponse(err.Error()))
 		return
 	}
+	defer file.Close()
 
 	filename := ""
 	if header != nil {
@@ -124,6 +125,7 @@ func uploadFileByFilePathController(context *gin.Context) {
 		context.JSON(http.StatusOK, createFailResponse(err.Error()))
 		return
 	}
+	defer file.Close()
 
 	log.WithFields(logrus.Fields{"filePath": filePath}).Info("上传文件")
 
@@ -178,6 +180,7 @@ func receivePushSynFileController(context *gin.Context) {
 		context.JSON(http.StatusOK, createFailResponse(err.Error()))
 		return
 	}
+	defer file.Close()
 	log.WithFields(logrus.Fields{"filePath": filePath, "md5": md5}).Info("接收推送同步文件")
 
 	err = service.ReceivePushSynFile(filePath, md5, file)

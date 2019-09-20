@@ -33,7 +33,7 @@ if [ ! -f $dockerfileFilename ]; then
 fi
 
 if [ ! -f $goFileBedFilename ]; then
-    wget -c -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.2.0/goFileBed-linux"
+    wget -c -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.2.1/goFileBed-linux"
 else
     echo 'goFileBed exist'
 fi

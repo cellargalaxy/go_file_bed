@@ -11,7 +11,7 @@
 
     <b-input-group id="loginForm">
         <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
-        <b-button size="sm" variant="outline-primary" @click="login">login</b-button>
+        <b-button size="sm" variant="outline-primary" :disabled="logining" @click="login">login</b-button>
     </b-input-group>
 
     <br/>
@@ -22,7 +22,8 @@
         </b-input-group>
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="sort" v-model="sort"></b-form-input>
-            <b-button size="sm" variant="outline-primary" @click="uploadFile">upload</b-button>
+            <b-button size="sm" variant="outline-primary" :disabled="fileUploading" @click="uploadFile">upload
+            </b-button>
         </b-input-group>
         <br/>
         <b-input-group>
@@ -30,7 +31,7 @@
         </b-input-group>
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="sort" v-model="sort"></b-form-input>
-            <b-button size="sm" variant="outline-primary" @click="uploadUrl">upload</b-button>
+            <b-button size="sm" variant="outline-primary" :disabled="urlUploading" @click="uploadUrl">upload</b-button>
         </b-input-group>
         <br/>
         <b-input-group>
@@ -38,7 +39,9 @@
         </b-input-group>
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
-            <b-button size="sm" variant="outline-primary" @click="uploadFileByFilePath">upload</b-button>
+            <b-button size="sm" variant="outline-primary" :disabled="filePathUploading" @click="uploadFileByFilePath">
+                upload
+            </b-button>
         </b-input-group>
         <b-table responsive small striped :busy="loading" :fields="fields" :items="fileInfos">
             <template v-slot:cell(name)="data">
@@ -81,7 +84,9 @@
 
     <div class="table-responsive" id="folderTable">
         <b-button-group>
-            <b-button size="sm" variant="btn btn-outline-warning" @click="clearAllCache">clear all cache</b-button>
+            <b-button size="sm" variant="btn btn-outline-warning" :disabled="allCacheClearing" @click="clearAllCache">
+                clear all cache
+            </b-button>
         </b-button-group>
 
         <nav aria-label="breadcrumb">
@@ -130,6 +135,7 @@
         el: '#loginForm',
         data: {
             token: null,
+            logining: false,
         },
         methods: {
             login: function () {
@@ -138,8 +144,10 @@
                     window.alert('token is empty')
                     return
                 }
+                loginVue.logining = true
                 instance.post("/login", Qs.stringify({token: this.token}))
                     .then(response => {
+                        loginVue.logining = false
                         const result = response.data
                         window.alert(result.massage)
                         if (result.code == 1) {
@@ -147,7 +155,10 @@
                             folderVue.listFolderInfo()
                         }
                     })
-                    .catch(error => window.alert("error: " + JSON.stringify(error)))
+                    .catch(error => {
+                        loginVue.logining = false
+                        window.alert("error: " + JSON.stringify(error))
+                    })
             }
         }
     })
@@ -181,6 +192,9 @@
                 },
             ],
             loading: false,
+            fileUploading: false,
+            urlUploading: false,
+            filePathUploading: false,
         },
         methods: {
             uploadFile: function () {
@@ -194,8 +208,10 @@
                 const param = new FormData()
                 param.append("sort", this.sort)
                 param.append("file", this.file)
+                uploadFileVue.fileUploading = true
                 instance.post("/admin/uploadFile", param, {headers: {'Content-Type': 'multipart/form-data'}})
                     .then(response => {
+                        uploadFileVue.fileUploading = false
                         const result = response.data
                         window.alert(result.massage)
                         if (result.code == 1) {
@@ -207,7 +223,10 @@
                             folderVue.listFolderInfo()
                         }
                     })
-                    .catch(error => alert("error: " + JSON.stringify(error)))
+                    .catch(error => {
+                        uploadFileVue.fileUploading = false
+                        alert("error: " + JSON.stringify(error))
+                    })
             },
             uploadUrl: function () {
                 if (this.sort == null) {
@@ -217,8 +236,10 @@
                     window.alert('file is empty')
                     return
                 }
+                uploadFileVue.urlUploading = true
                 instance.post("/admin/uploadUrl", Qs.stringify({sort: this.sort, url: this.url}))
                     .then(response => {
+                        uploadFileVue.urlUploading = false
                         const result = response.data
                         window.alert(result.massage)
                         if (result.code == 1) {
@@ -230,7 +251,10 @@
                             folderVue.listFolderInfo()
                         }
                     })
-                    .catch(error => alert("error: " + JSON.stringify(error)))
+                    .catch(error => {
+                        uploadFileVue.urlUploading = false
+                        alert("error: " + JSON.stringify(error))
+                    })
             },
             uploadFileByFilePath: function () {
                 if (this.filePath == null || this.filePath == "") {
@@ -245,8 +269,10 @@
                 const param = new FormData()
                 param.append("filePath", this.filePath)
                 param.append("file", this.file)
+                uploadFileVue.filePathUploading = true
                 instance.post("/admin/uploadFileByFilePath", param, {headers: {'Content-Type': 'multipart/form-data'}})
                     .then(response => {
+                        uploadFileVue.filePathUploading = false
                         const result = response.data
                         window.alert(result.massage)
                         if (result.code == 1) {
@@ -258,7 +284,10 @@
                             folderVue.listFolderInfo()
                         }
                     })
-                    .catch(error => alert("error: " + JSON.stringify(error)))
+                    .catch(error => {
+                        uploadFileVue.filePathUploading = false
+                        alert("error: " + JSON.stringify(error))
+                    })
             },
             deleteFile: function (index) {
                 deleteFile(this.fileInfos, index)
@@ -360,6 +389,7 @@
                 },
             ],
             loading: false,
+            allCacheClearing: false,
         },
         methods: {
             breadcrumbGo: function (index) {
@@ -429,15 +459,20 @@
                 if (!window.confirm("sure clear all cache ?!?")) {
                     return
                 }
+                folderVue.allCacheClearing = true
                 instance.post("/admin/clearAllCache", Qs.stringify({}))
                     .then(response => {
+                        folderVue.allCacheClearing = false
                         const result = response.data
                         alert(result.massage)
                         if (result.code == 1) {
                             this.listFolderInfo()
                         }
                     })
-                    .catch(error => alert("error: " + JSON.stringify(error)))
+                    .catch(error => {
+                        folderVue.allCacheClearing = false
+                        alert("error: " + JSON.stringify(error))
+                    })
             },
         }
     })
