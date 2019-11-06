@@ -50,7 +50,7 @@ docker build -t go_file_bed .
 echo 'docker create volume'
 docker volume create file_bed
 echo 'docker run'
-docker run -d --name $dockerName -v file_bed:/file_bed -p $listenPort:8880 -e TOKEN=$token go_file_bed
+docker run -d --name $dockerName --restart=always -v file_bed:/file_bed -p $listenPort:8880 -e TOKEN=$token go_file_bed
 
 echo 'clear file'
 rm -rf $dockerfileFilename
