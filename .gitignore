@@ -1,6 +1,3 @@
-# dependencies
-config.yml
-
 # build
 goFileBed.exe
 goFileBed

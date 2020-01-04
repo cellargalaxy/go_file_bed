@@ -19,41 +19,38 @@
     <form id="uploadForm">
         <b-input-group>
             <b-form-file size="sm" v-model="file"></b-form-file>
+            <b-form-input size="sm" type="text" placeholder="sort" v-model="sort"></b-form-input>
         </b-input-group>
         <b-input-group>
-            <b-form-input size="sm" type="text" placeholder="sort" v-model="sort"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
             <b-button size="sm" variant="outline-primary" :disabled="fileUploading" @click="uploadFile">upload
             </b-button>
         </b-input-group>
         <br/>
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="url" v-model="url"></b-form-input>
-        </b-input-group>
-        <b-input-group>
             <b-form-input size="sm" type="text" placeholder="sort" v-model="sort"></b-form-input>
-            <b-button size="sm" variant="outline-primary" :disabled="urlUploading" @click="uploadUrl">upload</b-button>
-        </b-input-group>
-        <br/>
-        <b-input-group>
-            <b-form-file size="sm" v-model="file"></b-form-file>
         </b-input-group>
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
-            <b-button size="sm" variant="outline-primary" :disabled="filePathUploading" @click="uploadFileByFilePath">
-                upload
-            </b-button>
+            <b-button size="sm" variant="outline-primary" :disabled="urlUploading" @click="uploadUrl">upload</b-button>
         </b-input-group>
-        <b-table responsive small striped :busy="loading" :fields="fields" :items="fileInfos">
+    </form>
+
+    <br/>
+
+    <div id="lastFileInfo">
+        <b-table responsive stacked small striped :busy="loading" :fields="fields" :items="fileInfos">
             <template v-slot:cell(name)="data">
-                <a :target="data.item.isFile?'_blank':''" :href="data.item.isFile?data.item.url:'javascript:;'"
+                <a :target="data.item.mime!=''?'_blank':''" :href="data.item.mime!=''?data.item.url:'javascript:;'"
                    @click="openFile(data.index)">{{data.item.name}}</a>
             </template>
             <template v-slot:cell(url)="data">
-                <b-form-input size="sm" type="text" placeholder="url" v-if="data.item.isFile"
+                <b-form-input size="sm" type="text" placeholder="url" v-if="data.item.mime!=''"
                               :value="window.location.protocol+'//'+window.location.host+data.item.url"></b-form-input>
             </template>
             <template v-slot:cell(delete)="data">
-                <b-button size="sm" variant="outline-danger" v-if="data.item.isFile" @click="deleteFile(data.index)">
+                <b-button size="sm" variant="outline-danger" v-if="data.item.mime!=''" @click="deleteFile(data.index)">
                     delete
                 </b-button>
             </template>
@@ -65,7 +62,7 @@
                 </div>
             </template>
         </b-table>
-    </form>
+    </div>
 
 
     <form id="synForm">
@@ -83,11 +80,6 @@
 
 
     <div class="table-responsive" id="folderTable">
-        <b-button-group>
-            <b-button size="sm" variant="btn btn-outline-warning" :disabled="allCacheClearing" @click="clearAllCache">
-                clear all cache
-            </b-button>
-        </b-button-group>
 
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
@@ -127,7 +119,7 @@
 <script src="//cdn.bootcss.com/axios/0.19.0-beta.1/axios.min.js"></script>
 
 <script>
-    window.onbeforeunload = (event) => 'maybe some data not save'
+    // window.onbeforeunload = (event) => 'maybe some data not save'
 
     var instance = axios.create({timeout: 60 * 60 * 1000});
 
@@ -141,7 +133,7 @@
             login: function () {
                 if (this.token == null || this.token == "") {
                     this.token = ""
-                    window.alert('token is empty')
+                    alert('token is empty')
                     return
                 }
                 loginVue.logining = true
@@ -149,15 +141,16 @@
                     .then(response => {
                         loginVue.logining = false
                         const result = response.data
-                        window.alert(result.massage)
+                        alert(JSON.stringify(result))
                         if (result.code == 1) {
                             this.token = null
+                            lastFileInfoVue.listLastFileInfo()
                             folderVue.listFolderInfo()
                         }
                     })
                     .catch(error => {
                         loginVue.logining = false
-                        window.alert("error: " + JSON.stringify(error))
+                        alert("error: " + JSON.stringify(error))
                     })
             }
         }
@@ -166,11 +159,75 @@
     const uploadFileVue = new Vue({
         el: '#uploadForm',
         data: {
-            sort: "",
-            url: null,
             filePath: null,
+            sort: null,
+            url: null,
             file: null,
-            fileInfos: [],
+            fileUploading: false,
+            urlUploading: false,
+        },
+        methods: {
+            uploadFile: function () {
+                if (this.file == null) {
+                    alert('file is empty')
+                    return
+                }
+                if (this.filePath == null || this.filePath == '') {
+                    this.filePath = createFilePath(this.sort, this.file.name)
+                    return
+                }
+                const param = new FormData()
+                param.append("filePath", this.filePath)
+                param.append("file", this.file)
+                uploadFileVue.fileUploading = true
+                instance.post("/admin/uploadFile", param, {headers: {'Content-Type': 'multipart/form-data'}})
+                    .then(response => {
+                        uploadFileVue.fileUploading = false
+                        const result = response.data
+                        alert(JSON.stringify(result))
+                        if (result.code == 1) {
+                            this.filePath = null
+                            this.file = null
+                            lastFileInfoVue.listLastFileInfo()
+                        }
+                    })
+                    .catch(error => {
+                        uploadFileVue.fileUploading = false
+                        alert("error: " + JSON.stringify(error))
+                    })
+            },
+            uploadUrl: function () {
+                if (this.file == null) {
+                    alert('file is empty')
+                    return
+                }
+                if (this.filePath == null || this.filePath == '') {
+                    this.filePath = createFilePath(this.sort, this.file.filename)
+                    return
+                }
+                uploadFileVue.urlUploading = true
+                instance.post("/admin/uploadUrl", Qs.stringify({filePath: this.filePath, url: this.url}))
+                    .then(response => {
+                        uploadFileVue.urlUploading = false
+                        const result = response.data
+                        alert(JSON.stringify(result))
+                        if (result.code == 1) {
+                            this.filePath = null
+                            this.url = null
+                            lastFileInfoVue.listLastFileInfo()
+                        }
+                    })
+                    .catch(error => {
+                        uploadFileVue.urlUploading = false
+                        alert("error: " + JSON.stringify(error))
+                    })
+            },
+        }
+    })
+
+    const lastFileInfoVue = new Vue({
+        el: '#lastFileInfo',
+        data: {
             fields: [
                 {
                     key: 'name',
@@ -183,6 +240,11 @@
                     sortable: true,
                 },
                 {
+                    key: 'md5',
+                    label: 'md5',
+                    sortable: true,
+                },
+                {
                     key: 'url',
                     label: 'url',
                 },
@@ -191,101 +253,30 @@
                     label: 'delete',
                 },
             ],
+            fileInfos: [],
             loading: false,
-            fileUploading: false,
-            urlUploading: false,
-            filePathUploading: false,
         },
         methods: {
-            uploadFile: function () {
-                if (this.sort == null) {
-                    this.sort = ""
-                }
-                if (this.file == null) {
-                    window.alert('file is empty')
-                    return
-                }
-                const param = new FormData()
-                param.append("sort", this.sort)
-                param.append("file", this.file)
-                uploadFileVue.fileUploading = true
-                instance.post("/admin/uploadFile", param, {headers: {'Content-Type': 'multipart/form-data'}})
-                    .then(response => {
-                        uploadFileVue.fileUploading = false
+            listLastFileInfo: function () {
+                this.loading = true
+                instance.get("/admin/listLastFileInfo", {params: {}})
+                    .then(function (response) {
+                        this.loading = false
                         const result = response.data
-                        window.alert(result.massage)
-                        if (result.code == 1) {
-                            this.sort = ""
-                            this.file = null
-                            for (let i = 0; i < result.data.length; i++) {
-                                this.fileInfos.unshift(formatFileOrFolderInfo(result.data[i]))
-                            }
-                            folderVue.listFolderInfo()
+                        if (result.code != 1) {
+                            alert(JSON.stringify(result))
+                            return
+                        }
+                        if (result.data == null) {
+                            return
+                        }
+                        this.fileInfos = result.data
+                        for (let i = 0; i < this.fileInfos.length; i++) {
+                            this.fileInfos[i] = formatFileOrFolderInfo(this.fileInfos[i])
                         }
                     })
                     .catch(error => {
-                        uploadFileVue.fileUploading = false
-                        alert("error: " + JSON.stringify(error))
-                    })
-            },
-            uploadUrl: function () {
-                if (this.sort == null) {
-                    this.sort = ""
-                }
-                if (this.file == null) {
-                    window.alert('file is empty')
-                    return
-                }
-                uploadFileVue.urlUploading = true
-                instance.post("/admin/uploadUrl", Qs.stringify({sort: this.sort, url: this.url}))
-                    .then(response => {
-                        uploadFileVue.urlUploading = false
-                        const result = response.data
-                        window.alert(result.massage)
-                        if (result.code == 1) {
-                            this.sort = ""
-                            this.url = null
-                            for (let i = 0; i < result.data.length; i++) {
-                                this.fileInfos.unshift(formatFileOrFolderInfo(result.data[i]))
-                            }
-                            folderVue.listFolderInfo()
-                        }
-                    })
-                    .catch(error => {
-                        uploadFileVue.urlUploading = false
-                        alert("error: " + JSON.stringify(error))
-                    })
-            },
-            uploadFileByFilePath: function () {
-                if (this.filePath == null || this.filePath == "") {
-                    this.filePath = ""
-                    window.alert('filePath is empty')
-                    return
-                }
-                if (this.file == null) {
-                    window.alert('file is empty')
-                    return
-                }
-                const param = new FormData()
-                param.append("filePath", this.filePath)
-                param.append("file", this.file)
-                uploadFileVue.filePathUploading = true
-                instance.post("/admin/uploadFileByFilePath", param, {headers: {'Content-Type': 'multipart/form-data'}})
-                    .then(response => {
-                        uploadFileVue.filePathUploading = false
-                        const result = response.data
-                        window.alert(result.massage)
-                        if (result.code == 1) {
-                            this.sort = ""
-                            this.file = null
-                            for (let i = 0; i < result.data.length; i++) {
-                                this.fileInfos.unshift(formatFileOrFolderInfo(result.data[i]))
-                            }
-                            folderVue.listFolderInfo()
-                        }
-                    })
-                    .catch(error => {
-                        uploadFileVue.filePathUploading = false
+                        folderVue.loading = false
                         alert("error: " + JSON.stringify(error))
                     })
             },
@@ -298,22 +289,20 @@
     const synVue = new Vue({
         el: '#synForm',
         data: {
-            pushSynHost: "",
-            pullSynHost: "",
-            token: "",
+            pushSynHost: null,
+            pullSynHost: null,
+            token: null,
             pushing: false,
             pulling: false,
         },
         methods: {
             pushSynFile: function () {
                 if (this.pushSynHost == null || this.pushSynHost == "") {
-                    this.pushSynHost = ""
-                    window.alert('pushSynHost is empty')
+                    alert('pushSynHost is empty')
                     return
                 }
                 if (this.token == null || this.token == "") {
-                    this.token = ""
-                    window.alert('token is empty')
+                    alert('token is empty')
                     return
                 }
                 this.pushing = true
@@ -321,7 +310,7 @@
                     .then(response => {
                         synVue.pushing = false
                         const result = response.data
-                        window.alert('push syn ' + (result.code == 1 ? 'success' : 'fail') +
+                        alert('push syn ' + (result.code == 1 ? 'success' : 'fail') +
                             '\nmassage: ' + result.massage +
                             '\nfail count: ' + result.data.failCount +
                             '\nerr: ' + JSON.stringify(result.data.err))
@@ -334,12 +323,12 @@
             pullSynFile: function () {
                 if (this.pullSynHost == null || this.pullSynHost == "") {
                     this.pullSynHost = ""
-                    window.alert('pullSynHost is empty')
+                    alert('pullSynHost is empty')
                     return
                 }
                 if (this.token == null || this.token == "") {
                     this.token = ""
-                    window.alert('token is empty')
+                    alert('token is empty')
                     return
                 }
                 this.pulling = true
@@ -347,7 +336,7 @@
                     .then(response => {
                         synVue.pulling = false
                         const result = response.data
-                        window.alert('pull syn ' + (result.code == 1 ? 'success' : 'fail') +
+                        alert('pull syn ' + (result.code == 1 ? 'success' : 'fail') +
                             '\nmassage: ' + result.massage +
                             '\nfail count: ' + result.data.failCount +
                             '\nerr: ' + JSON.stringify(result.data.err))
@@ -424,11 +413,11 @@
                         folderVue.loading = false
                         const result = response.data
                         if (result.code != 1) {
-                            window.alert(result.massage)
+                            alert(result.massage)
                             return
                         }
                         if (result.data == null || result.data.length == 0) {
-                            window.alert("this has not file or folder")
+                            alert("this has not file or folder")
                             result.data = []
                         }
                         folderVue.fileInfos = result.data
@@ -478,7 +467,7 @@
     })
 
     function deleteFile(fileInfos, index) {
-        if (!fileInfos[index].isFile) {
+        if (fileInfos[index].mime == null || fileInfos[index].mime == '') {
             window.alert("not file")
             return
         }
@@ -488,7 +477,7 @@
         instance.post("/admin/removeFile", Qs.stringify({filePath: fileInfos[index].path}))
             .then(response => {
                 const result = response.data
-                alert(result.massage)
+                alert(JSON.stringify(result))
                 if (result.code == 1) {
                     fileInfos.splice(index, 1)
                 }
@@ -511,7 +500,34 @@
         }
         var s = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
         var e = Math.floor(Math.log(bytes) / Math.log(1024));
-        return (bytes / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + s[e];
+        return (bytes / Math.pow(1024, Math.floor(e))).toFixed(2) + "" + s[e];
+    }
+
+
+    function createFilePath(sort, filename) {
+        return sort + '/' + formatDate(new Date(), 'yyyyMMdd') + '/' + filename
+    }
+
+    function formatDate(date, fmt) {
+        let o = {
+            'M+': date.getMonth() + 1, //月份
+            'd+': date.getDate(), //日
+            'h+': date.getHours(), //小时
+            'm+': date.getMinutes(), //分
+            's+': date.getSeconds(), //秒
+            'q+': Math.floor((date.getMonth() + 3) / 3), //季度
+            'S': date.getMilliseconds() //毫秒
+        }
+        if (/(y+)/.test(fmt)) {
+            fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length))
+        }
+        for (let k in o) {
+            if (new RegExp('(' + k + ')').test(fmt)) {
+                fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1)
+                    ? (o[k]) : (('00' + o[k]).substr(('' + o[k]).length)))
+            }
+        }
+        return fmt
     }
 </script>
 </body>
