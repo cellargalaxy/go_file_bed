@@ -11,222 +11,274 @@
 
     <b-input-group id="loginForm">
         <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
-        <b-button size="sm" variant="outline-primary" :disabled="logining" @click="login">login</b-button>
+        <b-button size="sm" variant="outline-primary" :disabled="loading" @click="login">login</b-button>
     </b-input-group>
-
     <br/>
-
-    <form id="uploadForm">
+    <form id="uploadFileForm">
         <b-input-group>
-            <b-form-file size="sm" v-model="file"></b-form-file>
-            <b-form-input size="sm" type="text" placeholder="sort" v-model="sort"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
+            <b-form-file size="sm" v-model="file" @input="input"></b-form-file>
         </b-input-group>
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
-            <b-button size="sm" variant="outline-primary" :disabled="fileUploading" @click="uploadFile">upload
-            </b-button>
-        </b-input-group>
-        <br/>
-        <b-input-group>
-            <b-form-input size="sm" type="text" placeholder="url" v-model="url"></b-form-input>
-            <b-form-input size="sm" type="text" placeholder="sort" v-model="sort"></b-form-input>
-        </b-input-group>
-        <b-input-group>
-            <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
-            <b-button size="sm" variant="outline-primary" :disabled="urlUploading" @click="uploadUrl">upload</b-button>
+            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="upload">upload</b-button>
         </b-input-group>
     </form>
-
     <br/>
-
-    <div id="lastFileInfo">
-        <b-table responsive stacked small striped :busy="loading" :fields="fields" :items="fileInfos">
-            <template v-slot:cell(name)="data">
-                <a :target="data.item.mime!=''?'_blank':''" :href="data.item.mime!=''?data.item.url:'javascript:;'"
-                   @click="openFile(data.index)">{{data.item.name}}</a>
-            </template>
-            <template v-slot:cell(url)="data">
-                <b-form-input size="sm" type="text" placeholder="url" v-if="data.item.mime!=''"
-                              :value="window.location.protocol+'//'+window.location.host+data.item.url"></b-form-input>
-            </template>
-            <template v-slot:cell(delete)="data">
-                <b-button size="sm" variant="outline-danger" v-if="data.item.mime!=''" @click="deleteFile(data.index)">
+    <form id="uploadUrlForm">
+        <b-input-group>
+            <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="url" v-model="url" @input="input"></b-form-input>
+        </b-input-group>
+        <b-input-group>
+            <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
+            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="upload">upload</b-button>
+        </b-input-group>
+    </form>
+    <br/>
+    <b-table id="lastFileInfoTable" stacked="xl" striped hover responsive small
+             :fields="fields" :items="infos" :busy="loading">
+        <template v-slot:cell(name)="data">
+            <a href="javascript:;" @click="openFile(data.index)">{{data.item.name}}</a>
+        </template>
+        <template v-slot:cell(mime)="data">
+            <code>{{data.item.mime}}</code>
+        </template>
+        <template v-slot:cell(md5)="data">
+            <code>{{data.item.md5}}</code>
+        </template>
+        <template v-slot:cell(url)="data">
+            <b-form-input size="sm" type="text" placeholder="url" :value="data.item.url"></b-form-input>
+        </template>
+        <template v-slot:cell(deal)="data">
+            <b-button-group>
+                <b-button size="sm" variant="outline-primary" :disabled="data.item.loading" @click="info(data.index)">
+                    info
+                </b-button>
+                <b-button size="sm" variant="outline-danger" :disabled="data.item.loading"
+                          @click="deleteFile(data.index)">
                     delete
                 </b-button>
-            </template>
+            </b-button-group>
+        </template>
 
-            <template v-slot:table-busy>
-                <div class="text-center text-danger my-2">
-                    <b-spinner class="align-middle"></b-spinner>
-                    <strong>Loading...</strong>
-                </div>
-            </template>
-        </b-table>
-    </div>
-
-
-    <form id="synForm">
-        <b-input-group>
-            <b-form-input size="sm" type="text" placeholder="pushSynHost" v-model="pushSynHost"></b-form-input>
-            <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
-            <b-button size="sm" variant="outline-primary" :disabled="pushing" @click="pushSynFile">push syn</b-button>
-        </b-input-group>
+        <template v-slot:table-busy>
+            <div class="text-center text-primary">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>Loading...</strong>
+            </div>
+        </template>
+    </b-table>
+    <br/>
+    <form id="pullSyncForm">
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="pullSynHost" v-model="pullSynHost"></b-form-input>
             <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
-            <b-button size="sm" variant="outline-primary" :disabled="pulling" @click="pullSynFile">pull syn</b-button>
+            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="pull">pull</b-button>
         </b-input-group>
     </form>
-
-
-    <div class="table-responsive" id="folderTable">
-
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item" v-for="(breadcrumb, index) in breadcrumbs"
-                    @click="breadcrumbGo(index)"><a href="javascript:;">{{breadcrumb.name}}</a></li>
-            </ol>
-        </nav>
-
-        <b-table responsive small striped :busy="loading" :fields="fields" :items="fileInfos">
-            <template v-slot:cell(name)="data">
-                <a :target="data.item.isFile?'_blank':''" :href="data.item.isFile?data.item.url:'javascript:;'"
-                   @click="openFile(data.index)">{{data.item.name}}</a>
-            </template>
-            <template v-slot:cell(url)="data">
-                <b-form-input size="sm" type="text" placeholder="url" v-if="data.item.isFile"
-                              :value="window.location.protocol+'//'+window.location.host+data.item.url"></b-form-input>
-            </template>
-            <template v-slot:cell(delete)="data">
-                <b-button size="sm" variant="outline-danger" v-if="data.item.isFile" @click="deleteFile(data.index)">
+    <form id="pushSyncForm">
+        <b-input-group>
+            <b-form-input size="sm" type="text" placeholder="pushSynHost" v-model="pushSynHost"></b-form-input>
+            <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
+            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="push">push</b-button>
+        </b-input-group>
+    </form>
+    <br/>
+    <b-breadcrumb id="filePathBreadcrumb">
+        <b-breadcrumb-item @click="go(-1)">
+            <b-icon icon="house-fill"></b-icon>
+        </b-breadcrumb-item>
+        <b-breadcrumb-item v-for="(breadcrumb, index) in breadcrumbs" @click="go(index)">
+            {{breadcrumb.name}}
+        </b-breadcrumb-item>
+    </b-breadcrumb>
+    <b-table id="fileInfoTable" stacked="xl" striped hover responsive small
+             :fields="fields" :items="infos" :busy="loading">
+        <template v-slot:cell(name)="data">
+            <a href="javascript:;" @click="openFile(data.index)">{{data.item.name}}</a>
+        </template>
+        <template v-slot:cell(mime)="data">
+            <code>{{data.item.mime}}</code>
+        </template>
+        <template v-slot:cell(md5)="data">
+            <code>{{data.item.md5}}</code>
+        </template>
+        <template v-slot:cell(url)="data">
+            <b-form-input size="sm" type="text" placeholder="url" v-if="data.item.isFile"
+                          :value="data.item.url"></b-form-input>
+        </template>
+        <template v-slot:cell(deal)="data">
+            <b-button-group>
+                <b-button size="sm" variant="outline-primary" :disabled="data.item.loading" @click="info(data.index)">
+                    info
+                </b-button>
+                <b-button size="sm" variant="outline-danger" :disabled="data.item.loading"
+                          @click="deleteFile(data.index)">
                     delete
                 </b-button>
-            </template>
+            </b-button-group>
+        </template>
 
-            <template v-slot:table-busy>
-                <div class="text-center text-danger my-2">
-                    <b-spinner class="align-middle"></b-spinner>
-                    <strong>Loading...</strong>
-                </div>
-            </template>
-        </b-table>
-    </div>
+        <template v-slot:table-busy>
+            <div class="text-center text-primary">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>Loading...</strong>
+            </div>
+        </template>
+    </b-table>
+
 
 </div>
-<script src="//unpkg.com/vue@latest/dist/vue.min.js"></script>
+
+</body>
+<script src="//vuejs.org/js/vue.min.js"></script>
 <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
-<script src="https://cdn.bootcss.com/qs/6.8.0/qs.min.js"></script>
+<script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
+<script src="//cdn.bootcss.com/qs/6.8.0/qs.min.js"></script>
 <script src="//cdn.bootcss.com/axios/0.19.0-beta.1/axios.min.js"></script>
-
 <script>
-    // window.onbeforeunload = (event) => 'maybe some data not save'
+    window.onbeforeunload = (event) => 'maybe some data not save'
+    var instance = axios.create({timeout: 60 * 60 * 1000})
 
-    var instance = axios.create({timeout: 60 * 60 * 1000});
-
-    const loginVue = new Vue({
+    const loginFormVue = new Vue({
         el: '#loginForm',
         data: {
             token: null,
-            logining: false,
+            loading: false
         },
         methods: {
-            login: function () {
-                if (this.token == null || this.token == "") {
-                    this.token = ""
-                    alert('token is empty')
+            login() {
+                if (this.token == null || this.token == '') {
+                    alert('token为空')
                     return
                 }
-                loginVue.logining = true
-                instance.post("/login", Qs.stringify({token: this.token}))
+                this.loading = true
+                instance.post("login", Qs.stringify({token: this.token}))
                     .then(response => {
-                        loginVue.logining = false
                         const result = response.data
-                        alert(JSON.stringify(result))
+                        alert(result.code == 1 ? '登录成功' : '登录失败')
                         if (result.code == 1) {
-                            this.token = null
-                            lastFileInfoVue.listLastFileInfo()
-                            folderVue.listFolderInfo()
+                            this.init()
+                            this.setLogin()
+                            flush()
                         }
                     })
                     .catch(error => {
-                        loginVue.logining = false
+                        this.loading = false
                         alert("error: " + JSON.stringify(error))
                     })
+            },
+            setLogin() {
+                setCookie('login', 'login')
+            },
+            getLogin() {
+                return getCookie('login') == 'login'
+            },
+            init() {
+                this.token = null
+                this.loading = false
             }
         }
     })
 
     const uploadFileVue = new Vue({
-        el: '#uploadForm',
+        el: '#uploadFileForm',
         data: {
-            filePath: null,
-            sort: null,
-            url: null,
             file: null,
-            fileUploading: false,
-            urlUploading: false,
+            sort: '',
+            filePath: null,
+            loading: false
         },
         methods: {
-            uploadFile: function () {
-                if (this.file == null) {
-                    alert('file is empty')
+            upload() {
+                if (this.file == null || this.filePath == null || this.filePath == '') {
+                    alert('文件或者文件路径为空')
                     return
                 }
-                if (this.filePath == null || this.filePath == '') {
-                    this.filePath = createFilePath(this.sort, this.file.name)
-                    return
-                }
+                this.loading = true
                 const param = new FormData()
                 param.append("filePath", this.filePath)
                 param.append("file", this.file)
-                uploadFileVue.fileUploading = true
-                instance.post("/admin/uploadFile", param, {headers: {'Content-Type': 'multipart/form-data'}})
+                instance.post("admin/uploadFile", param, {headers: {'Content-Type': 'multipart/form-data'}})
                     .then(response => {
-                        uploadFileVue.fileUploading = false
                         const result = response.data
-                        alert(JSON.stringify(result))
                         if (result.code == 1) {
-                            this.filePath = null
-                            this.file = null
-                            lastFileInfoVue.listLastFileInfo()
+                            this.init()
+                            flush()
+                        } else {
+                            alert(result.message)
                         }
                     })
                     .catch(error => {
-                        uploadFileVue.fileUploading = false
+                        this.loading = false
                         alert("error: " + JSON.stringify(error))
                     })
             },
-            uploadUrl: function () {
-                if (this.file == null) {
-                    alert('file is empty')
+            input() {
+                if (this.file != null) {
+                    this.filePath = createFilePath(this.sort, this.file.name)
+                }
+            },
+            init() {
+                this.file = null
+                this.sort = ''
+                this.filePath = null
+                this.loading = false
+            }
+        }
+    })
+
+    const uploadUrlVue = new Vue({
+        el: '#uploadUrlForm',
+        data: {
+            url: null,
+            sort: '',
+            filePath: null,
+            loading: false
+        },
+        methods: {
+            upload() {
+                if (this.url == null || this.url == '' || this.filePath == null || this.filePath == '') {
+                    alert('URL或者文件路径为空')
                     return
                 }
-                if (this.filePath == null || this.filePath == '') {
-                    this.filePath = createFilePath(this.sort, this.file.filename)
-                    return
-                }
-                uploadFileVue.urlUploading = true
-                instance.post("/admin/uploadUrl", Qs.stringify({filePath: this.filePath, url: this.url}))
+                this.loading = true
+                instance.post("admin/uploadUrl", Qs.stringify({filePath: this.filePath, url: this.url}))
                     .then(response => {
-                        uploadFileVue.urlUploading = false
                         const result = response.data
-                        alert(JSON.stringify(result))
                         if (result.code == 1) {
-                            this.filePath = null
-                            this.url = null
-                            lastFileInfoVue.listLastFileInfo()
+                            this.init()
+                            flush()
+                        } else {
+                            alert(result.message)
                         }
                     })
                     .catch(error => {
-                        uploadFileVue.urlUploading = false
+                        this.loading = false
                         alert("error: " + JSON.stringify(error))
                     })
             },
+            input() {
+                if (this.url != null) {
+                    let filename = this.url.split('//')
+                    filename = filename[filename.length - 1]
+                    filename = filename.split('?')
+                    filename = filename[0].replace(/:/g, '_').replace(/\//g, '-').replace(/\\/g, '-')
+                    this.filePath = createFilePath(this.sort, filename)
+                }
+            },
+            init() {
+                this.url = null
+                this.sort = ''
+                this.filePath = null
+                this.loading = false
+            }
         }
     })
 
     const lastFileInfoVue = new Vue({
-        el: '#lastFileInfo',
+        el: '#lastFileInfoTable',
         data: {
             fields: [
                 {
@@ -235,132 +287,185 @@
                     sortable: true,
                 },
                 {
+                    key: 'mime',
+                    label: 'mime',
+                    sortable: true,
+                },
+                {
                     key: 'size',
                     label: 'size',
+                    sortable: true,
+                },
+                {
+                    key: 'count',
+                    label: 'count',
                     sortable: true,
                 },
                 {
                     key: 'md5',
                     label: 'md5',
-                    sortable: true,
                 },
                 {
                     key: 'url',
                     label: 'url',
                 },
                 {
-                    key: 'delete',
-                    label: 'delete',
+                    key: 'deal',
+                    label: 'deal',
                 },
             ],
-            fileInfos: [],
+            infos: [],
             loading: false,
         },
         methods: {
-            listLastFileInfo: function () {
+            listLastFileInfo() {
                 this.loading = true
-                instance.get("/admin/listLastFileInfo", {params: {}})
-                    .then(function (response) {
+                instance.get("admin/listLastFileInfo", {params: {}})
+                    .then(response => {
                         this.loading = false
                         const result = response.data
-                        if (result.code != 1) {
-                            alert(JSON.stringify(result))
-                            return
-                        }
-                        if (result.data == null) {
-                            return
-                        }
-                        this.fileInfos = result.data
-                        for (let i = 0; i < this.fileInfos.length; i++) {
-                            this.fileInfos[i] = formatFileOrFolderInfo(this.fileInfos[i])
+                        if (result.code == 1) {
+                            if (result.data == null || result.data.length == 0) {
+                                alert('没有最新文件')
+                            }
+                            this.infos = initFileInfos(result.data)
+                        } else {
+                            alert(result.message)
                         }
                     })
                     .catch(error => {
-                        folderVue.loading = false
+                        this.loading = false
                         alert("error: " + JSON.stringify(error))
                     })
+            },
+            openFile(index) {
+                if (this.infos[index].isFile) {
+                    window.open(this.infos[index].url)
+                } else {
+                    alert('明明是最近文件，但居然是文件夹？！？')
+                }
+            },
+            info(index) {
+                getFileCompleteInfo(this.infos, index)
             },
             deleteFile: function (index) {
-                deleteFile(this.fileInfos, index)
+                removeFile(this.infos, index)
             },
         }
     })
 
-    const synVue = new Vue({
-        el: '#synForm',
+    const pullSyncVue = new Vue({
+        el: '#pullSyncForm',
         data: {
-            pushSynHost: null,
             pullSynHost: null,
             token: null,
-            pushing: false,
-            pulling: false,
+            loading: false
         },
         methods: {
-            pushSynFile: function () {
-                if (this.pushSynHost == null || this.pushSynHost == "") {
-                    alert('pushSynHost is empty')
+            pull() {
+                if (this.pullSynHost == null || this.pullSynHost == '' || this.token == null || this.token == '') {
+                    alert('pull同步URL或者token为空')
                     return
                 }
-                if (this.token == null || this.token == "") {
-                    alert('token is empty')
-                    return
-                }
-                this.pushing = true
-                instance.post("/admin/pushSynFile", Qs.stringify({pushSynHost: this.pushSynHost, token: this.token}))
+                this.loading = true
+                instance.post("admin/pullSynFile", Qs.stringify({pullSynHost: this.pullSynHost, token: this.token}))
                     .then(response => {
-                        synVue.pushing = false
                         const result = response.data
-                        alert('push syn ' + (result.code == 1 ? 'success' : 'fail') +
-                            '\nmassage: ' + result.massage +
-                            '\nfail count: ' + result.data.failCount +
-                            '\nerr: ' + JSON.stringify(result.data.err))
+                        alert('失败数量: ' + result.data + ', 失败原因: ' + result.message)
+                        if (result.code == 1) {
+                            this.init()
+                            flush()
+                        }
                     })
                     .catch(error => {
-                        synVue.pushing = false
+                        this.loading = false
                         alert("error: " + JSON.stringify(error))
                     })
             },
-            pullSynFile: function () {
-                if (this.pullSynHost == null || this.pullSynHost == "") {
-                    this.pullSynHost = ""
-                    alert('pullSynHost is empty')
-                    return
-                }
-                if (this.token == null || this.token == "") {
-                    this.token = ""
-                    alert('token is empty')
-                    return
-                }
-                this.pulling = true
-                instance.post("/admin/pullSynFile", Qs.stringify({pullSynHost: this.pullSynHost, token: this.token}))
-                    .then(response => {
-                        synVue.pulling = false
-                        const result = response.data
-                        alert('pull syn ' + (result.code == 1 ? 'success' : 'fail') +
-                            '\nmassage: ' + result.massage +
-                            '\nfail count: ' + result.data.failCount +
-                            '\nerr: ' + JSON.stringify(result.data.err))
-                    })
-                    .catch(error => {
-                        synVue.pulling = false
-                        alert("error: " + JSON.stringify(error))
-                    })
-            },
+            init() {
+                this.pullSynHost = null
+                this.token = null
+                this.loading = false
+            }
         }
     })
 
-    const folderVue = new Vue({
-        el: '#folderTable',
+    const pushSyncVue = new Vue({
+        el: '#pushSyncForm',
         data: {
-            currentPath: "",
-            breadcrumbs: [
-                {name: "root", path: ""},
-            ],
-            fileInfos: [],
+            pushSynHost: null,
+            token: null,
+            loading: false
+        },
+        methods: {
+            push() {
+                if (this.pushSynHost == null || this.pushSynHost == '' || this.token == null || this.token == '') {
+                    alert('push同步URL或者token为空')
+                    return
+                }
+                this.loading = true
+                instance.post("admin/pushSynFile", Qs.stringify({pushSynHost: this.pushSynHost, token: this.token}))
+                    .then(response => {
+                        const result = response.data
+                        alert('失败数量: ' + result.data + ', 失败原因: ' + result.message)
+                        if (result.code == 1) {
+                            this.init()
+                            flush()
+                        }
+                    })
+                    .catch(error => {
+                        this.loading = false
+                        alert("error: " + JSON.stringify(error))
+                    })
+            },
+            init() {
+                this.pushSynHost = null
+                this.token = null
+                this.loading = false
+            }
+        }
+    })
+
+    const filePathVue = new Vue({
+        el: '#filePathBreadcrumb',
+        data: {
+            breadcrumbs: [],
+        },
+        methods: {
+            go(index) {
+                if (index == -1) {
+                    fileInfoVue.init('/')
+                    return
+                }
+                fileInfoVue.init(this.breadcrumbs[index].path)
+            },
+            init(path) {
+                this.breadcrumbs = []
+                const names = path.split('/')
+                let filePath = ''
+                for (let i = 0; i < names.length; i++) {
+                    if (names[i] == '') {
+                        continue
+                    }
+                    filePath = filePath + '/' + names[i]
+                    this.breadcrumbs.push({name: names[i], path: filePath})
+                }
+            }
+        }
+    })
+
+    const fileInfoVue = new Vue({
+        el: '#fileInfoTable',
+        data: {
             fields: [
                 {
                     key: 'name',
                     label: 'name',
+                    sortable: true,
+                },
+                {
+                    key: 'mime',
+                    label: 'mime',
                     sortable: true,
                 },
                 {
@@ -369,142 +474,154 @@
                     sortable: true,
                 },
                 {
+                    key: 'count',
+                    label: 'count',
+                    sortable: true,
+                },
+                {
+                    key: 'md5',
+                    label: 'md5',
+                },
+                {
                     key: 'url',
                     label: 'url',
                 },
                 {
-                    key: 'delete',
-                    label: 'delete',
+                    key: 'deal',
+                    label: 'deal',
                 },
             ],
+            folderPath: '/',
+            infos: [],
             loading: false,
-            allCacheClearing: false,
         },
         methods: {
-            breadcrumbGo: function (index) {
-                this.gotoFolder(this.breadcrumbs[index].path)
-            },
-            openFile: function (index) {
-                var fileInfo = this.fileInfos[index]
-                if (fileInfo.isFile) {
-                    return
-                }
-                this.gotoFolder(fileInfo.path)
-            },
-            setBreadcrumb: function () {
-                const paths = this.currentPath.split("/")
-                this.breadcrumbs = [{name: "root", path: ""}]
-                let fatherBreadcrumbIndex = 0
-                for (let i = 0; i < paths.length; i++) {
-                    if (paths[i] == null || paths[i] == "") {
-                        continue
-                    }
-                    this.breadcrumbs.push({
-                        name: paths[i],
-                        path: this.breadcrumbs[fatherBreadcrumbIndex].path + "/" + paths[i]
-                    })
-                    fatherBreadcrumbIndex++
-                }
-            },
-            listFolderInfo: function () {
+            listFolderInfo() {
                 this.loading = true
-                instance.get("/admin/listFolderInfo", {params: {folderPath: this.currentPath}})
-                    .then(function (response) {
-                        folderVue.loading = false
+                instance.get("admin/listFolderInfo", {params: {folderPath: this.folderPath}})
+                    .then(response => {
+                        this.loading = false
                         const result = response.data
-                        if (result.code != 1) {
-                            alert(result.massage)
-                            return
-                        }
-                        if (result.data == null || result.data.length == 0) {
-                            alert("this has not file or folder")
-                            result.data = []
-                        }
-                        folderVue.fileInfos = result.data
-                        folderVue.fileInfos.sort((info1, info2) => {
-                            if (info1.isFile != info2.isFile) {
-                                return !info1.isFile ? -1 : 1
+                        if (result.code == 1) {
+                            if (result.data == null || result.data.length == 0) {
+                                alert('此目录下没有文件')
                             }
-                            return info1.path - info2.path
-                        })
-                        for (let i = 0; i < folderVue.fileInfos.length; i++) {
-                            folderVue.fileInfos[i] = formatFileOrFolderInfo(folderVue.fileInfos[i])
+                            this.infos = initFileInfos(result.data)
+                            filePathVue.init(this.folderPath)
+                        } else {
+                            alert(result.message)
                         }
                     })
                     .catch(error => {
-                        folderVue.loading = false
+                        this.loading = false
                         alert("error: " + JSON.stringify(error))
                     })
             },
-            gotoFolder: function (path) {
-                this.currentPath = path
-                this.setBreadcrumb()
+            init(path) {
+                this.folderPath = path
                 this.listFolderInfo()
             },
-            deleteFile: function (index) {
-                deleteFile(this.fileInfos, index)
-            },
-            clearAllCache: function () {
-                if (!window.confirm("sure clear all cache ?!?")) {
-                    return
+            openFile(index) {
+                if (this.infos[index].isFile) {
+                    window.open(this.infos[index].url)
+                } else {
+                    this.init(this.infos[index].path)
                 }
-                folderVue.allCacheClearing = true
-                instance.post("/admin/clearAllCache", Qs.stringify({}))
-                    .then(response => {
-                        folderVue.allCacheClearing = false
-                        const result = response.data
-                        alert(result.massage)
-                        if (result.code == 1) {
-                            this.listFolderInfo()
-                        }
-                    })
-                    .catch(error => {
-                        folderVue.allCacheClearing = false
-                        alert("error: " + JSON.stringify(error))
-                    })
+            },
+            info(index) {
+                getFileCompleteInfo(this.infos, index)
+            },
+            deleteFile: function (index) {
+                removeFile(this.infos, index)
             },
         }
     })
 
-    function deleteFile(fileInfos, index) {
-        if (fileInfos[index].mime == null || fileInfos[index].mime == '') {
-            window.alert("not file")
+    function removeFile(infos, index) {
+        if (!infos[index].isFile) {
+            alert("所删除不是文件")
             return
         }
-        if (!window.confirm("sure delete file ?!?: " + fileInfos[index].path)) {
+        if (!confirm("确实删除文件？！？: " + infos[index].path)) {
             return
         }
-        instance.post("/admin/removeFile", Qs.stringify({filePath: fileInfos[index].path}))
+        infos[index].loading = true
+        instance.post("admin/removeFile", Qs.stringify({filePath: infos[index].path}))
             .then(response => {
+                infos[index].loading = false
                 const result = response.data
-                alert(JSON.stringify(result))
+                alert(result.code == 1 ? '删除成功' : '删除失败')
                 if (result.code == 1) {
-                    fileInfos.splice(index, 1)
+                    flush()
                 }
             })
-            .catch(error => alert("error: " + JSON.stringify(error)))
+            .catch(error => {
+                infos[index].loading = false
+                alert("error: " + JSON.stringify(error))
+            })
     }
 
-    function formatFileOrFolderInfo(fileOrFolderInfo) {
-        fileOrFolderInfo.size = formatFileSize(fileOrFolderInfo.fileSize)
-        fileOrFolderInfo.url = encodeURI(fileOrFolderInfo.url)
-        return fileOrFolderInfo
+    function getFileCompleteInfo(infos, index) {
+        infos[index].loading = true
+        instance.get("admin/getFileCompleteInfo", {params: {fileOrFolderPath: infos[index].path}})
+            .then(response => {
+                infos[index].loading = false
+                const result = response.data
+                if (result.code == 1) {
+                    const info = initFileInfo(result.data)
+                    infos[index].size = info.size
+                    infos[index].count = info.count
+                    infos[index].md5 = info.md5
+                } else {
+                    alert(result.message)
+                }
+            })
+            .catch(error => {
+                infos[index].loading = false
+                alert("error: " + JSON.stringify(error))
+            })
     }
 
-    function formatFileSize(bytes) {
-        if (bytes < 0) {
-            return '非法大小: ' + bytes
+    function flush() {
+        lastFileInfoVue.listLastFileInfo()
+        fileInfoVue.listFolderInfo()
+    }
+
+    function initFileInfos(infos) {
+        if (infos == null) {
+            return []
         }
-        if (bytes == 0) {
-            return '0 B'
+        for (let i = 0; i < infos.length; i++) {
+            infos[i] = initFileInfo(infos[i])
         }
+        return infos
+    }
+
+    function initFileInfo(info) {
+        if (info == null) {
+            return null
+        }
+        info.loading = false
+        info.isFile = info.mime != null && info.mime != ''
+        info.url = window.location.protocol + '//' + window.location.host + info.url
+        if (info.size != null) {
+            info.size = formatFileSize(info.size)
+        }
+        return info
+    }
+
+    function formatFileSize(size) {
+        if (size < 0) return '非法大小: ' + size
+        if (size == 0) return '0 B'
         var s = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-        var e = Math.floor(Math.log(bytes) / Math.log(1024));
-        return (bytes / Math.pow(1024, Math.floor(e))).toFixed(2) + "" + s[e];
+        var e = Math.floor(Math.log(size) / Math.log(1024));
+        return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + "" + s[e];
     }
-
 
     function createFilePath(sort, filename) {
+        if (sort == null) {
+            sort = ''
+        }
         return sort + '/' + formatDate(new Date(), 'yyyyMMdd') + '/' + filename
     }
 
@@ -529,6 +646,33 @@
         }
         return fmt
     }
+
+    function getCookieFromString(cookieString, name) {
+        if (cookieString == null) {
+            return null
+        }
+        let nameEQ = name + '='
+        let ca = cookieString.split(';')
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i]
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length)
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length)
+        }
+        return null
+    }
+
+    function getCookie(name) {
+        return getCookieFromString(document.cookie, name)
+    }
+
+    function setCookie(key, value) {
+        let date = new Date()
+        date.setTime(date.getTime() + (1000 * 60 * 60))
+        document.cookie = key + '=' + value + '; expires=' + date.toGMTString()
+    }
+
+    if (loginFormVue.getLogin()) {
+        flush()
+    }
 </script>
-</body>
 </html>
