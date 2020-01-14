@@ -333,7 +333,7 @@ var indexHtmlString = `<!DOCTYPE html>
     <b-table id="lastFileInfoTable" stacked="xl" striped hover responsive small
              :fields="fields" :items="infos" :busy="loading">
         <template v-slot:cell(name)="data">
-            <a href="javascript:;" @click="openFile(data.index)">{{data.item.name}}</a>
+            <a href="javascript:;" @click="openFile(data.item.path)">{{data.item.name}}</a>
         </template>
         <template v-slot:cell(mime)="data">
             <code>{{data.item.mime}}</code>
@@ -346,12 +346,12 @@ var indexHtmlString = `<!DOCTYPE html>
         </template>
         <template v-slot:cell(deal)="data">
             <b-button-group>
-                <b-button size="sm" variant="outline-primary" :disabled="data.item.loading" @click="info(data.index)">
+                <b-button size="sm" variant="outline-primary" :disabled="data.item.loading"
+                          @click="info(data.item.path)">
                     info
                 </b-button>
                 <b-button size="sm" variant="outline-danger" :disabled="data.item.loading"
-                          @click="deleteFile(data.index)">
-                    delete
+                          @click="deleteFile(data.item.path)">delete
                 </b-button>
             </b-button-group>
         </template>
@@ -390,7 +390,7 @@ var indexHtmlString = `<!DOCTYPE html>
     <b-table id="fileInfoTable" stacked="xl" striped hover responsive small
              :fields="fields" :items="infos" :busy="loading">
         <template v-slot:cell(name)="data">
-            <a href="javascript:;" @click="openFile(data.index)">{{data.item.name}}</a>
+            <a href="javascript:;" @click="openFile(data.item.path)">{{data.item.name}}</a>
         </template>
         <template v-slot:cell(mime)="data">
             <code>{{data.item.mime}}</code>
@@ -399,17 +399,16 @@ var indexHtmlString = `<!DOCTYPE html>
             <code>{{data.item.md5}}</code>
         </template>
         <template v-slot:cell(url)="data">
-            <b-form-input size="sm" type="text" placeholder="url" v-if="data.item.isFile"
-                          :value="data.item.url"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="url" v-if="data.item.isFile" :value="data.item.url">
+            </b-form-input>
         </template>
         <template v-slot:cell(deal)="data">
             <b-button-group>
-                <b-button size="sm" variant="outline-primary" :disabled="data.item.loading" @click="info(data.index)">
-                    info
+                <b-button size="sm" variant="outline-primary" :disabled="data.item.loading"
+                          @click="info(data.item.path)">info
                 </b-button>
                 <b-button size="sm" variant="outline-danger" :disabled="data.item.loading"
-                          @click="deleteFile(data.index)">
-                    delete
+                          @click="deleteFile(data.item.path)">delete
                 </b-button>
             </b-button-group>
         </template>
@@ -632,17 +631,47 @@ var indexHtmlString = `<!DOCTYPE html>
                         alert("error: " + JSON.stringify(error))
                     })
             },
-            openFile(index) {
+            openFile(path) {
+                let index = 0
+                for (; index < this.infos.length; index++) {
+                    if (this.infos[index].path == path) {
+                        break
+                    }
+                }
+                if (index == this.infos.length) {
+                    alert('非法打开文件的路径: ' + path)
+                    return
+                }
                 if (this.infos[index].isFile) {
                     window.open(this.infos[index].url)
                 } else {
                     alert('明明是最近文件，但居然是文件夹？！？')
                 }
             },
-            info(index) {
+            info(path) {
+                let index = 0
+                for (; index < this.infos.length; index++) {
+                    if (this.infos[index].path == path) {
+                        break
+                    }
+                }
+                if (index == this.infos.length) {
+                    alert('非法查询文件的路径: ' + path)
+                    return
+                }
                 getFileCompleteInfo(this.infos, index)
             },
-            deleteFile: function (index) {
+            deleteFile(path) {
+                let index = 0
+                for (; index < this.infos.length; index++) {
+                    if (this.infos[index].path == path) {
+                        break
+                    }
+                }
+                if (index == this.infos.length) {
+                    alert('非法删除文件的路径: ' + path)
+                    return
+                }
                 removeFile(this.infos, index)
             },
         }
@@ -785,7 +814,7 @@ var indexHtmlString = `<!DOCTYPE html>
                     label: 'deal',
                 },
             ],
-            folderPath: '/',
+            folderPath: '',
             infos: [],
             loading: false,
         },
@@ -815,17 +844,47 @@ var indexHtmlString = `<!DOCTYPE html>
                 this.folderPath = path
                 this.listFolderInfo()
             },
-            openFile(index) {
+            openFile(path) {
+                let index = 0
+                for (; index < this.infos.length; index++) {
+                    if (this.infos[index].path == path) {
+                        break
+                    }
+                }
+                if (index == this.infos.length) {
+                    alert('非法打开文件的路径: ' + path)
+                    return
+                }
                 if (this.infos[index].isFile) {
                     window.open(this.infos[index].url)
                 } else {
                     this.init(this.infos[index].path)
                 }
             },
-            info(index) {
+            info(path) {
+                let index = 0
+                for (; index < this.infos.length; index++) {
+                    if (this.infos[index].path == path) {
+                        break
+                    }
+                }
+                if (index == this.infos.length) {
+                    alert('非法查询文件的路径: ' + path)
+                    return
+                }
                 getFileCompleteInfo(this.infos, index)
             },
-            deleteFile: function (index) {
+            deleteFile(path) {
+                let index = 0
+                for (; index < this.infos.length; index++) {
+                    if (this.infos[index].path == path) {
+                        break
+                    }
+                }
+                if (index == this.infos.length) {
+                    alert('非法删除文件的路径: ' + path)
+                    return
+                }
                 removeFile(this.infos, index)
             },
         }

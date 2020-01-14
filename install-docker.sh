@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-dockerfileFilename="Dockerfile"
-goFileBedFilename="goFileBed"
-
 while :
 do
     read -s -p "please enter token(required):" token
@@ -14,47 +11,19 @@ read -p "please enter listen port(default:8880):" listenPort
 if [ -z $listenPort ];then
     listenPort="8880"
 fi
-read -p "please enter docker name(default:go_file_bed):" dockerName
-if [ -z $dockerName ];then
-    dockerName="go_file_bed"
+read -p "please enter last file info count(default:10):" lastFileInfoCount
+if [ -z $lastFileInfoCount ];then
+    lastFileInfoCount="10"
 fi
 
 echo 'input any key go on,or control+c over'
 read
 
-if [ ! -f $dockerfileFilename ]; then
-    wget -c -O $dockerfileFilename "https://raw.githubusercontent.com/cellargalaxy/goFileBed/master/Dockerfile"
-else
-    echo 'dockerfile exist'
-fi
-if [ ! -f $dockerfileFilename ]; then
-    echo 'dockerfile not exist'
-    exit 1
-fi
-
-if [ ! -f $goFileBedFilename ]; then
-    wget -c -O $goFileBedFilename "https://github.com/cellargalaxy/goFileBed/releases/download/v0.2.1/goFileBed-linux"
-else
-    echo 'goFileBed exist'
-fi
-if [ ! -f $goFileBedFilename ]; then
-    echo 'goFileBed not exist'
-    exit 1
-fi
-
-echo 'chmod 755 '$goFileBedFilename
-chmod 755 ./$goFileBedFilename
-
 echo 'docker build'
-docker build -t go_file_bed .
+docker build -t zdm_reptile .
 echo 'docker create volume'
-docker volume create file_bed
+docker volume create zdm_reptile
 echo 'docker run'
-docker run -d --name $dockerName --restart=always -v file_bed:/file_bed -p $listenPort:8880 -e TOKEN=$token go_file_bed
-
-echo 'clear file'
-rm -rf $dockerfileFilename
-rm -rf $goFileBedFilename
-echo 'clear file finish'
+docker run -d --restart=always --name go_file_bed -p $listenPort:8880 -e TOKEN=$token -e LAST_FILE_INFO_COUNT=$lastFileInfoCount -v file_bed:/file_bed go_file_bed
 
 echo 'all finish'
