@@ -956,7 +956,7 @@ var indexHtmlString = `<!DOCTYPE html>
         }
         info.loading = false
         info.isFile = info.mime != null && info.mime != ''
-        info.url = window.location.protocol + '//' + window.location.host + info.url
+        info.url = encodeURI(info.url)
         if (info.size != null) {
             info.size = formatFileSize(info.size)
         }
