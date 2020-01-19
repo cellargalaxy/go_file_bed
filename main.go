@@ -449,6 +449,7 @@ var indexHtmlString = `<!DOCTYPE html>
                 this.loading = true
                 instance.post("login", Qs.stringify({token: this.token}))
                     .then(response => {
+                        this.loading = false
                         const result = response.data
                         alert(result.code == 1 ? '登录成功' : '登录失败')
                         if (result.code == 1) {
@@ -470,7 +471,6 @@ var indexHtmlString = `<!DOCTYPE html>
             },
             init() {
                 this.token = null
-                this.loading = false
             }
         }
     })
@@ -495,6 +495,7 @@ var indexHtmlString = `<!DOCTYPE html>
                 param.append("file", this.file)
                 instance.post("admin/uploadFile", param, {headers: {'Content-Type': 'multipart/form-data'}})
                     .then(response => {
+                        this.loading = false
                         const result = response.data
                         if (result.code == 1) {
                             this.init()
@@ -517,7 +518,6 @@ var indexHtmlString = `<!DOCTYPE html>
                 this.file = null
                 this.sort = ''
                 this.filePath = null
-                this.loading = false
             }
         }
     })
@@ -539,6 +539,7 @@ var indexHtmlString = `<!DOCTYPE html>
                 this.loading = true
                 instance.post("admin/uploadUrl", Qs.stringify({filePath: this.filePath, url: this.url}))
                     .then(response => {
+                        this.loading = false
                         const result = response.data
                         if (result.code == 1) {
                             this.init()
@@ -565,7 +566,6 @@ var indexHtmlString = `<!DOCTYPE html>
                 this.url = null
                 this.sort = ''
                 this.filePath = null
-                this.loading = false
             }
         }
     })
@@ -693,6 +693,7 @@ var indexHtmlString = `<!DOCTYPE html>
                 this.loading = true
                 instance.post("admin/pullSynFile", Qs.stringify({pullSynHost: this.pullSynHost, token: this.token}))
                     .then(response => {
+                        this.loading = false
                         const result = response.data
                         alert('失败数量: ' + result.data + ', 失败原因: ' + result.message)
                         if (result.code == 1) {
@@ -708,7 +709,6 @@ var indexHtmlString = `<!DOCTYPE html>
             init() {
                 this.pullSynHost = null
                 this.token = null
-                this.loading = false
             }
         }
     })
@@ -729,6 +729,7 @@ var indexHtmlString = `<!DOCTYPE html>
                 this.loading = true
                 instance.post("admin/pushSynFile", Qs.stringify({pushSynHost: this.pushSynHost, token: this.token}))
                     .then(response => {
+                        this.loading = false
                         const result = response.data
                         alert('失败数量: ' + result.data + ', 失败原因: ' + result.message)
                         if (result.code == 1) {
@@ -744,7 +745,6 @@ var indexHtmlString = `<!DOCTYPE html>
             init() {
                 this.pushSynHost = null
                 this.token = null
-                this.loading = false
             }
         }
     })
