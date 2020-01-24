@@ -510,6 +510,9 @@ var indexHtmlString = `<!DOCTYPE html>
                     })
             },
             input() {
+                if (this.sort != null) {
+                    this.sort = this.sort.replace(/\s/g, '');
+                }
                 if (this.file != null) {
                     this.filePath = createFilePath(this.sort, this.file.name)
                 }
@@ -554,6 +557,9 @@ var indexHtmlString = `<!DOCTYPE html>
                     })
             },
             input() {
+                if (this.sort != null) {
+                    this.sort = this.sort.replace(/\s/g, '');
+                }
                 if (this.url != null) {
                     let filename = this.url.split('//')
                     filename = filename[filename.length - 1]
