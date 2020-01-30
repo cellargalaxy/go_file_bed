@@ -342,7 +342,7 @@ var indexHtmlString = `<!DOCTYPE html>
             <code>{{data.item.md5}}</code>
         </template>
         <template v-slot:cell(url)="data">
-            <b-form-input size="sm" type="text" placeholder="url" :value="data.item.url"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="url" disabled :value="'/'+data.item.url"></b-form-input>
         </template>
         <template v-slot:cell(deal)="data">
             <b-button-group>
@@ -399,7 +399,7 @@ var indexHtmlString = `<!DOCTYPE html>
             <code>{{data.item.md5}}</code>
         </template>
         <template v-slot:cell(url)="data">
-            <b-form-input size="sm" type="text" placeholder="url" v-if="data.item.isFile" :value="data.item.url">
+            <b-form-input size="sm" type="text"  placeholder="url" disabled v-if="data.item.isFile" :value="'/'+data.item.url">
             </b-form-input>
         </template>
         <template v-slot:cell(deal)="data">
@@ -965,6 +965,9 @@ var indexHtmlString = `<!DOCTYPE html>
         info.url = encodeURI(info.url)
         if (info.size != null) {
             info.size = formatFileSize(info.size)
+        }
+        if (info.url.startsWith('/')) {
+            info.url = info.url.substring(1)
         }
         return info
     }
