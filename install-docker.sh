@@ -21,8 +21,6 @@ read
 
 echo 'docker build'
 docker build -t go_file_bed .
-echo 'docker create volume'
-docker volume create go_file_bed
 echo 'docker run'
 docker run -d --restart=always --name go_file_bed -p $listenPort:8880 -e TOKEN=$token -e LAST_FILE_INFO_COUNT=$lastFileInfoCount -v file_bed:/file_bed go_file_bed
 
