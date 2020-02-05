@@ -1055,9 +1055,14 @@ func AddFile(filePath string, reader io.Reader) ([]FileSimpleInfo, error) {
 		return nil, err
 	}
 
-	fileMime := mime.TypeByExtension(fileSimpleInfo.Name)
+	fileMime := mime.TypeByExtension(path.Ext(fileSimpleInfo.Name))
+	log.WithFields(logrus.Fields{"fileMime": fileMime}).Info("文件mime")
 	if !strings.HasPrefix(fileMime, "image") || strings.Contains(fileMime, "gif") {
 		log.WithFields(logrus.Fields{"filePath": fileSimpleInfo.Path}).Info("文件不是图片")
+		lastFileInfos = append(lastFileInfos, fileSimpleInfo)
+		if len(lastFileInfos) > LastFileInfoCount {
+			lastFileInfos = lastFileInfos[len(lastFileInfos)-LastFileInfoCount:]
+		}
 		return []FileSimpleInfo{fileSimpleInfo}, nil
 	}
 
