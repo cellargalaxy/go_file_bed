@@ -47,20 +47,20 @@ const PushSynFileUrl = "/admin/pushSynFile"
 const PullSynFileUrl = "/admin/pullSynFile"
 
 type FileSimpleInfo struct {
-	Path string `json:"path"`
-	Name string `json:"name"`
-	Mime string `json:"mime"`
-	Url  string `json:"url"`
+	Path   string `json:"path"`
+	Name   string `json:"name"`
+	IsFile bool   `json:"isFile"`
+	Url    string `json:"url"`
 }
 
 type FileCompleteInfo struct {
-	Path  string `json:"path"`
-	Name  string `json:"name"`
-	Mime  string `json:"mime"`
-	Url   string `json:"url"`
-	Size  int64  `json:"size"`
-	Count int32  `json:"count"`
-	Md5   string `json:"md5"`
+	Path   string `json:"path"`
+	Name   string `json:"name"`
+	IsFile bool   `json:"isFile"`
+	Url    string `json:"url"`
+	Size   int64  `json:"size"`
+	Count  int32  `json:"count"`
+	Md5    string `json:"md5"`
 }
 
 //config================================================================================================================
@@ -333,10 +333,7 @@ var indexHtmlString = `<!DOCTYPE html>
     <b-table id="lastFileInfoTable" stacked="xl" striped hover responsive small
              :fields="fields" :items="infos" :busy="loading">
         <template v-slot:cell(name)="data">
-            <a href="javascript:;" @click="openFile(data.item.path)">{{data.item.name}}</a>
-        </template>
-        <template v-slot:cell(mime)="data">
-            <code>{{data.item.mime}}</code>
+            <code @dblclick="openFile(data.item.path)">{{data.item.name}}</code>
         </template>
         <template v-slot:cell(md5)="data">
             <code>{{data.item.md5}}</code>
@@ -390,16 +387,14 @@ var indexHtmlString = `<!DOCTYPE html>
     <b-table id="fileInfoTable" stacked="xl" striped hover responsive small
              :fields="fields" :items="infos" :busy="loading">
         <template v-slot:cell(name)="data">
-            <a href="javascript:;" @click="openFile(data.item.path)">{{data.item.name}}</a>
-        </template>
-        <template v-slot:cell(mime)="data">
-            <code>{{data.item.mime}}</code>
+            <code @dblclick="openFile(data.item.path)">{{data.item.name}}</code>
         </template>
         <template v-slot:cell(md5)="data">
             <code>{{data.item.md5}}</code>
         </template>
         <template v-slot:cell(url)="data">
-            <b-form-input size="sm" type="text"  placeholder="url" disabled v-if="data.item.isFile" :value="'/'+data.item.url">
+            <b-form-input size="sm" type="text" placeholder="url" disabled v-if="data.item.isFile"
+                          :value="'/'+data.item.url">
             </b-form-input>
         </template>
         <template v-slot:cell(deal)="data">
@@ -583,11 +578,6 @@ var indexHtmlString = `<!DOCTYPE html>
                 {
                     key: 'name',
                     label: 'name',
-                    sortable: true,
-                },
-                {
-                    key: 'mime',
-                    label: 'mime',
                     sortable: true,
                 },
                 {
@@ -793,11 +783,6 @@ var indexHtmlString = `<!DOCTYPE html>
                     sortable: true,
                 },
                 {
-                    key: 'mime',
-                    label: 'mime',
-                    sortable: true,
-                },
-                {
                     key: 'size',
                     label: 'size',
                     sortable: true,
@@ -961,7 +946,6 @@ var indexHtmlString = `<!DOCTYPE html>
             return null
         }
         info.loading = false
-        info.isFile = info.mime != null && info.mime != ''
         info.url = encodeURI(info.url)
         if (info.size != null) {
             info.size = formatFileSize(info.size)
@@ -1073,7 +1057,8 @@ func AddFile(filePath string, reader io.Reader) ([]FileSimpleInfo, error) {
 		return nil, err
 	}
 
-	if !strings.HasPrefix(fileSimpleInfo.Mime, "image") || strings.Contains(fileSimpleInfo.Mime, "gif") {
+	fileMime := mime.TypeByExtension(fileSimpleInfo.Name)
+	if !strings.HasPrefix(fileMime, "image") || strings.Contains(fileMime, "gif") {
 		log.WithFields(logrus.Fields{"filePath": fileSimpleInfo.Path}).Info("文件不是图片")
 		return []FileSimpleInfo{fileSimpleInfo}, nil
 	}
@@ -1172,11 +1157,11 @@ func getFileSimpleInfo(bedFileOrFolderPath string) (FileSimpleInfo, error) {
 
 	existAndIsFile, fileInfo := ExistAndIsFile(bedFileOrFolderPath)
 	fileSimpleInfo := FileSimpleInfo{
-		Path: filePath,
-		Name: fileInfo.Name(),
+		Path:   filePath,
+		Name:   fileInfo.Name(),
+		IsFile: existAndIsFile,
 	}
 	if existAndIsFile {
-		fileSimpleInfo.Mime = mime.TypeByExtension(path.Ext(fileInfo.Name()))
 		fileSimpleInfo.Url = createUrl(filePath)
 	}
 
@@ -1192,13 +1177,13 @@ func GetFileCompleteInfo(fileOrFolderPath string) (FileCompleteInfo, error) {
 	existAndIsFile, fileInfo := ExistAndIsFile(bedFileOrFolderPath)
 	size, count, _ := GetFileOrFolderSizeAndCount(bedFileOrFolderPath)
 	fileCompleteInfo := FileCompleteInfo{
-		Path:  fileOrFolderPath,
-		Name:  fileInfo.Name(),
-		Size:  size,
-		Count: count,
+		Path:   fileOrFolderPath,
+		Name:   fileInfo.Name(),
+		Size:   size,
+		Count:  count,
+		IsFile: existAndIsFile,
 	}
 	if existAndIsFile {
-		fileCompleteInfo.Mime = mime.TypeByExtension(path.Ext(fileInfo.Name()))
 		fileCompleteInfo.Url = createUrl(fileOrFolderPath)
 		md5, err := GetFileMd5(bedFileOrFolderPath)
 		if err == nil {

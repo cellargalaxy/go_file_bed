@@ -39,10 +39,7 @@
     <b-table id="lastFileInfoTable" stacked="xl" striped hover responsive small
              :fields="fields" :items="infos" :busy="loading">
         <template v-slot:cell(name)="data">
-            <a href="javascript:;" @click="openFile(data.item.path)">{{data.item.name}}</a>
-        </template>
-        <template v-slot:cell(mime)="data">
-            <code>{{data.item.mime}}</code>
+            <code @dblclick="openFile(data.item.path)">{{data.item.name}}</code>
         </template>
         <template v-slot:cell(md5)="data">
             <code>{{data.item.md5}}</code>
@@ -96,10 +93,7 @@
     <b-table id="fileInfoTable" stacked="xl" striped hover responsive small
              :fields="fields" :items="infos" :busy="loading">
         <template v-slot:cell(name)="data">
-            <a href="javascript:;" @click="openFile(data.item.path)">{{data.item.name}}</a>
-        </template>
-        <template v-slot:cell(mime)="data">
-            <code>{{data.item.mime}}</code>
+            <code @dblclick="openFile(data.item.path)">{{data.item.name}}</code>
         </template>
         <template v-slot:cell(md5)="data">
             <code>{{data.item.md5}}</code>
@@ -290,11 +284,6 @@
                 {
                     key: 'name',
                     label: 'name',
-                    sortable: true,
-                },
-                {
-                    key: 'mime',
-                    label: 'mime',
                     sortable: true,
                 },
                 {
@@ -500,11 +489,6 @@
                     sortable: true,
                 },
                 {
-                    key: 'mime',
-                    label: 'mime',
-                    sortable: true,
-                },
-                {
                     key: 'size',
                     label: 'size',
                     sortable: true,
@@ -668,7 +652,6 @@
             return null
         }
         info.loading = false
-        info.isFile = info.mime != null && info.mime != ''
         info.url = encodeURI(info.url)
         if (info.size != null) {
             info.size = formatFileSize(info.size)
