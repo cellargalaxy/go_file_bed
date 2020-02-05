@@ -514,7 +514,6 @@ var indexHtmlString = `<!DOCTYPE html>
             },
             init() {
                 this.file = null
-                this.sort = ''
                 this.filePath = null
             }
         }
@@ -565,7 +564,6 @@ var indexHtmlString = `<!DOCTYPE html>
             },
             init() {
                 this.url = null
-                this.sort = ''
                 this.filePath = null
             }
         }
