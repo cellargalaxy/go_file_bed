@@ -615,7 +615,7 @@ var indexHtmlString = `<!DOCTYPE html>
                             if (result.data == null || result.data.length == 0) {
                                 alert('没有最新文件')
                             }
-                            this.infos = initFileInfos(result.data)
+                            this.infos = initFileInfos(result.data).reverse()
                         } else {
                             alert(result.message)
                         }
