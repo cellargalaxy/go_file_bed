@@ -3,7 +3,6 @@ module github.com/cellargalaxy/go-file-bed
 go 1.14
 
 require (
-	github.com/GeertJohan/go.rice v1.0.0
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/disintegration/imaging v1.6.2
 	github.com/elazarl/goproxy v0.0.0-20200315184450-1f3cb6622dad // indirect

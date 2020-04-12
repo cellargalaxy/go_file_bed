@@ -10,7 +10,7 @@ paths:
   /admin/getFileCompleteInfo:
     get:
       consumes:
-        - multipart/form-data
+      - multipart/form-data
       parameters:
         - description: fileOrFolderPath
           in: query
