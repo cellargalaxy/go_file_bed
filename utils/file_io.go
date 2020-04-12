@@ -67,7 +67,7 @@ func CreateFileWithBytes(filePath string, bytes []byte) error {
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"filePath": filePath, "err": err}).Error("写入文件初始数据失败")
 	} else {
-		logrus.WithFields(logrus.Fields{"filePath": filePath, "written": written}).Error("写入文件初始数据成功")
+		logrus.WithFields(logrus.Fields{"filePath": filePath, "written": written}).Info("写入文件初始数据成功")
 	}
 	return err
 }
@@ -82,7 +82,7 @@ func CreateFileWithReader(filePath string, reader io.Reader) error {
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"filePath": filePath, "err": err}).Error("写入文件初始数据失败")
 	} else {
-		logrus.WithFields(logrus.Fields{"filePath": filePath, "written": written}).Error("写入文件初始数据成功")
+		logrus.WithFields(logrus.Fields{"filePath": filePath, "written": written}).Info("写入文件初始数据成功")
 	}
 	return err
 }
