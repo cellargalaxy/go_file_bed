@@ -17,6 +17,7 @@
     <form id="uploadFileForm">
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="date" v-model="date" @input="input"></b-form-input>
             <b-form-file size="sm" v-model="file" @input="input"></b-form-file>
         </b-input-group>
         <b-input-group>
@@ -28,6 +29,7 @@
     <form id="uploadUrlForm">
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="date" v-model="date" @input="input"></b-form-input>
             <b-form-input size="sm" type="text" placeholder="url" v-model="url" @input="input"></b-form-input>
         </b-input-group>
         <b-input-group>
@@ -69,14 +71,14 @@
     <br/>
     <form id="pullSyncForm">
         <b-input-group>
-            <b-form-input size="sm" type="text" placeholder="pullSynHost" v-model="pullSynHost"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="pullSyncHost" v-model="pullSyncHost"></b-form-input>
             <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
             <b-button size="sm" variant="outline-primary" :disabled="loading" @click="pull">pull</b-button>
         </b-input-group>
     </form>
     <form id="pushSyncForm">
         <b-input-group>
-            <b-form-input size="sm" type="text" placeholder="pushSynHost" v-model="pushSynHost"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="pushSyncHost" v-model="pushSyncHost"></b-form-input>
             <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
             <b-button size="sm" variant="outline-primary" :disabled="loading" @click="push">push</b-button>
         </b-input-group>
@@ -124,13 +126,12 @@
 
 
 </div>
-
 </body>
 <script src="//vuejs.org/js/vue.min.js"></script>
 <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
 <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
-<script src="//cdn.bootcss.com/qs/6.8.0/qs.min.js"></script>
-<script src="//cdn.bootcss.com/axios/0.19.0-beta.1/axios.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/qs/6.9.3/qs.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"></script>
 <script>
     window.onbeforeunload = (event) => 'maybe some data not save'
     var instance = axios.create({timeout: 60 * 60 * 1000})
@@ -181,6 +182,7 @@
         data: {
             file: null,
             sort: '',
+            date: formatDate(new Date(), 'yyyyMMdd'),
             filePath: null,
             loading: false
         },
@@ -215,7 +217,7 @@
                     this.sort = this.sort.replace(/\s/g, '');
                 }
                 if (this.file != null) {
-                    this.filePath = createFilePath(this.sort, this.file.name)
+                    this.filePath = createFilePath(this.sort, this.date, this.file.name)
                 }
             },
             init() {
@@ -230,6 +232,7 @@
         data: {
             url: null,
             sort: '',
+            date: formatDate(new Date(), 'yyyyMMdd'),
             filePath: null,
             loading: false
         },
@@ -265,7 +268,7 @@
                     filename = filename[filename.length - 1]
                     filename = filename.split('?')
                     filename = filename[0].replace(/:/g, '_').replace(/\//g, '-').replace(/\\/g, '-')
-                    this.filePath = createFilePath(this.sort, filename)
+                    this.filePath = createFilePath(this.sort, this.date, filename)
                 }
             },
             init() {
@@ -380,18 +383,18 @@
     const pullSyncVue = new Vue({
         el: '#pullSyncForm',
         data: {
-            pullSynHost: null,
+            pullSyncHost: null,
             token: null,
             loading: false
         },
         methods: {
             pull() {
-                if (this.pullSynHost == null || this.pullSynHost == '' || this.token == null || this.token == '') {
+                if (this.pullSyncHost == null || this.pullSyncHost == '' || this.token == null || this.token == '') {
                     alert('pull同步URL或者token为空')
                     return
                 }
                 this.loading = true
-                instance.post("admin/pullSynFile", Qs.stringify({pullSynHost: this.pullSynHost, token: this.token}))
+                instance.post("admin/pullSyncFile", Qs.stringify({pullSyncHost: this.pullSyncHost, token: this.token}))
                     .then(response => {
                         this.loading = false
                         const result = response.data
@@ -407,7 +410,7 @@
                     })
             },
             init() {
-                this.pullSynHost = null
+                this.pullSyncHost = null
                 this.token = null
             }
         }
@@ -416,18 +419,18 @@
     const pushSyncVue = new Vue({
         el: '#pushSyncForm',
         data: {
-            pushSynHost: null,
+            pushSyncHost: null,
             token: null,
             loading: false
         },
         methods: {
             push() {
-                if (this.pushSynHost == null || this.pushSynHost == '' || this.token == null || this.token == '') {
+                if (this.pushSyncHost == null || this.pushSyncHost == '' || this.token == null || this.token == '') {
                     alert('push同步URL或者token为空')
                     return
                 }
                 this.loading = true
-                instance.post("admin/pushSynFile", Qs.stringify({pushSynHost: this.pushSynHost, token: this.token}))
+                instance.post("admin/pushSyncFile", Qs.stringify({pushSyncHost: this.pushSyncHost, token: this.token}))
                     .then(response => {
                         this.loading = false
                         const result = response.data
@@ -443,7 +446,7 @@
                     })
             },
             init() {
-                this.pushSynHost = null
+                this.pushSyncHost = null
                 this.token = null
             }
         }
@@ -651,7 +654,7 @@
         }
         info.loading = false
         info.url = encodeURI(info.url)
-        if (info.size != null) {
+        if (info.size != undefined) {
             info.size = formatFileSize(info.size)
         }
         if (info.url.startsWith('/')) {
@@ -668,11 +671,15 @@
         return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + "" + s[e];
     }
 
-    function createFilePath(sort, filename) {
-        if (sort == null) {
-            sort = ''
+    function createFilePath(sort, date, filename) {
+        let filePath = filename
+        if (date != null && date != '') {
+            filePath = date + '/' + filePath
         }
-        return sort + '/' + formatDate(new Date(), 'yyyyMMdd') + '/' + filename
+        if (sort != null && sort != '') {
+            filePath = sort + '/' + filePath
+        }
+        return filePath
     }
 
     function formatDate(date, fmt) {

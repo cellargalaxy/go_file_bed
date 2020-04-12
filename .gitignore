@@ -1,6 +1,7 @@
 # build
-goFileBed.exe
-goFileBed
+go-file-bed.exe
+go-file-bed
+file_bed
 
 ### STS ###
 .apt_generated

@@ -1,0 +1,203 @@
+basePath: '{{.BasePath}}'
+host: '{{.Host}}'
+info:
+  contact: {}
+  description: '{{.Description}}'
+  license: {}
+  title: '{{.Title}}'
+  version: '{{.Version}}'
+paths:
+  /admin/getFileCompleteInfo:
+    get:
+      consumes:
+        - multipart/form-data
+      parameters:
+        - description: fileOrFolderPath
+          in: query
+          name: fileOrFolderPath
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: getFileCompleteInfo
+  /admin/listAllFileSimpleInfo:
+    get:
+      consumes:
+        - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: listAllFileSimpleInfo
+  /admin/listFolderInfo:
+    get:
+      consumes:
+        - multipart/form-data
+      parameters:
+        - description: folderPath
+          in: query
+          name: folderPath
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: listFolderInfo
+  /admin/listLastFileInfo:
+    get:
+      consumes:
+        - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: listLastFileInfo
+  /admin/pullSyncFile:
+    post:
+      consumes:
+        - multipart/form-data
+      parameters:
+        - description: pullSyncHost
+          in: formData
+          name: pullSyncHost
+          required: true
+          type: string
+        - description: token
+          in: formData
+          name: token
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: pullSyncFile
+  /admin/pushSyncFile:
+    post:
+      consumes:
+        - multipart/form-data
+      parameters:
+        - description: pushSyncHost
+          in: formData
+          name: pushSyncHost
+          required: true
+          type: string
+        - description: token
+          in: formData
+          name: token
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: pushSyncFile
+  /admin/receivePushSyncFile:
+    post:
+      consumes:
+        - multipart/form-data
+      parameters:
+        - description: filePath
+          in: formData
+          name: filePath
+          required: true
+          type: string
+        - description: md5
+          in: formData
+          name: md5
+          required: true
+          type: string
+        - description: file
+          in: formData
+          name: file
+          required: true
+          type: file
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: receivePushSyncFile
+  /admin/removeFile:
+    post:
+      consumes:
+        - multipart/form-data
+      parameters:
+        - description: filePath
+          in: formData
+          name: filePath
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: removeFile
+  /admin/uploadFile:
+    post:
+      consumes:
+        - multipart/form-data
+      parameters:
+        - description: filePath
+          in: formData
+          name: filePath
+          required: true
+          type: string
+        - description: file
+          in: formData
+          name: file
+          required: true
+          type: file
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: uploadFile
+  /admin/uploadUrl:
+    post:
+      consumes:
+        - multipart/form-data
+      parameters:
+        - description: filePath
+          in: formData
+          name: filePath
+          required: true
+          type: string
+        - description: url
+          in: formData
+          name: url
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: uploadUrl
+  /login:
+    post:
+      consumes:
+        - multipart/form-data
+      parameters:
+        - description: token
+          in: formData
+          name: token
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: login
+swagger: "2.0"
