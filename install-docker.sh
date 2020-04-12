@@ -58,7 +58,7 @@ docker build -t go_file_bed .
 echo 'docker create volume'
 docker volume create file_bed
 echo 'docker run'
-docker run -d
+docker run -d \
 --restart=always \
 --name go_file_bed \
 -p $listenPort:8880 \
