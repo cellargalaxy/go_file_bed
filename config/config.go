@@ -29,6 +29,8 @@ const (
 
 	ConfigFilePath    = "config.ini"
 	ImageTargetSize   = 1024 * 200
+	JpegMinQuality    = 20
+	JpegMaxQuality    = 80
 	ImageSaveFormat   = imaging.JPEG
 	Timeout           = 5 * time.Second
 	PullOrPushTimeout = 60 * 60 * time.Second
