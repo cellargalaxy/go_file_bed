@@ -276,7 +276,7 @@ const indexHtmlString = `<!DOCTYPE html>
     <b-table id="lastFileInfoTable" stacked="xl" striped hover responsive small
              :fields="fields" :items="infos" :busy="loading">
         <template v-slot:cell(name)="data">
-            <code @dblclick="openFile(data.item.path)">{{data.item.name}}</code>
+            <code>{{data.item.name}}</code>
         </template>
         <template v-slot:cell(md5)="data">
             <code>{{data.item.md5}}</code>
@@ -286,9 +286,9 @@ const indexHtmlString = `<!DOCTYPE html>
         </template>
         <template v-slot:cell(deal)="data">
             <b-button-group>
+                <b-button size="sm" variant="outline-success" @click="openFile(data.item.path)">open</b-button>
                 <b-button size="sm" variant="outline-primary" :disabled="data.item.loading"
-                          @click="info(data.item.path)">
-                    info
+                          @click="info(data.item.path)">info
                 </b-button>
                 <b-button size="sm" variant="outline-danger" :disabled="data.item.loading"
                           @click="deleteFile(data.item.path)">delete
@@ -330,7 +330,7 @@ const indexHtmlString = `<!DOCTYPE html>
     <b-table id="fileInfoTable" stacked="xl" striped hover responsive small
              :fields="fields" :items="infos" :busy="loading">
         <template v-slot:cell(name)="data">
-            <code @dblclick="openFile(data.item.path)">{{data.item.name}}</code>
+            <code>{{data.item.name}}</code>
         </template>
         <template v-slot:cell(md5)="data">
             <code>{{data.item.md5}}</code>
@@ -342,6 +342,7 @@ const indexHtmlString = `<!DOCTYPE html>
         </template>
         <template v-slot:cell(deal)="data">
             <b-button-group>
+                <b-button size="sm" variant="outline-success" @click="openFile(data.item.path)">open</b-button>
                 <b-button size="sm" variant="outline-primary" :disabled="data.item.loading"
                           @click="info(data.item.path)">info
                 </b-button>
