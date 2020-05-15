@@ -55,6 +55,8 @@ func AddFile(filePath string, reader io.Reader) (model.FileSimpleInfo, error) {
 			imageBuffer = buffer
 		}
 		reader = imageBuffer
+
+		filePath = AddImageExtension(filePath)
 	}
 
 	info, err := dao.InsertFile(filePath, reader)

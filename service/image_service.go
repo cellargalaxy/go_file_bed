@@ -2,11 +2,16 @@ package service
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/cellargalaxy/go-file-bed/config"
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
 	"math"
 )
+
+func AddImageExtension(filePath string) string {
+	return fmt.Sprintf("%s.%v", filePath, config.ImageSaveFormat)
+}
 
 func CompressionImage(buffer *bytes.Buffer) (*bytes.Buffer, error) {
 	imageBytes := buffer.Bytes()
