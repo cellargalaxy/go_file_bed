@@ -560,7 +560,7 @@ const indexHtmlString = `<!DOCTYPE html>
                             if (result.data == null || result.data.length == 0) {
                                 alert('没有最新文件')
                             }
-                            this.infos = initFileInfos(result.data).reverse()
+                            this.infos = initFileInfos(result.data)
                         } else {
                             alert(result.message)
                         }
