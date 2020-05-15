@@ -106,6 +106,7 @@ func addLastFileInfo(info model.FileSimpleInfo) {
 	defer releaseLastInfoLock()
 	if len(lastFileInfos) < config.LastFileInfoCount {
 		lastFileInfos = append([]model.FileSimpleInfo{info}, lastFileInfos...)
+		return
 	}
 	for i := len(lastFileInfos) - 1; i > 0; i-- {
 		lastFileInfos[i] = lastFileInfos[i-1]
