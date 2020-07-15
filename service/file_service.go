@@ -43,7 +43,7 @@ func AddFile(filePath string, reader io.Reader) (model.FileSimpleInfo, error) {
 	format, err := imaging.FormatFromExtension(fileExt)
 	logrus.WithFields(logrus.Fields{"format": format, "err": err}).Info("解析图片拓展名")
 
-	if err == nil {
+	if err == nil && format != imaging.GIF {
 		buffer := &bytes.Buffer{}
 		_, err := io.Copy(buffer, reader)
 		if err != nil {
