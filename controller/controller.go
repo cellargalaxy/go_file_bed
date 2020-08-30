@@ -28,6 +28,7 @@ func Controller() error {
 		context.Header("Content-Type", "text/html; charset=utf-8")
 		context.String(200, indexHtmlString)
 	})
+	//engine.StaticFile("/","static/html/index.html")
 	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	engine.Static(config.FileUrl, config.FileBedPath)
 	engine.POST(config.LoginUrl, login)
@@ -253,11 +254,13 @@ const indexHtmlString = `<!DOCTYPE html>
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
             <b-form-input size="sm" type="text" placeholder="date" v-model="date" @input="input"></b-form-input>
-            <b-form-file size="sm" v-model="file" @input="input"></b-form-file>
         </b-input-group>
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
-            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="upload">upload</b-button>
+            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="uploads">upload</b-button>
+        </b-input-group>
+        <b-input-group>
+            <b-form-file multiple size="sm" v-model="files" @input="input"></b-form-file>
         </b-input-group>
     </form>
     <br/>
@@ -265,11 +268,13 @@ const indexHtmlString = `<!DOCTYPE html>
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
             <b-form-input size="sm" type="text" placeholder="date" v-model="date" @input="input"></b-form-input>
-            <b-form-input size="sm" type="text" placeholder="url" v-model="url" @input="input"></b-form-input>
         </b-input-group>
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
-            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="upload">upload</b-button>
+            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="uploads">upload</b-button>
+        </b-input-group>
+        <b-input-group>
+            <b-form-textarea size="sm" placeholder="url" v-model="urls" :rows="row" @input="input"></b-form-textarea>
         </b-input-group>
     </form>
     <br/>
@@ -380,7 +385,7 @@ const indexHtmlString = `<!DOCTYPE html>
         },
         methods: {
             login() {
-                if (this.token == null || this.token == '') {
+                if (this.token == null || this.token === '') {
                     alert('token为空')
                     return
                 }
@@ -389,8 +394,8 @@ const indexHtmlString = `<!DOCTYPE html>
                     .then(response => {
                         this.loading = false
                         const result = response.data
-                        alert(result.code == 1 ? '登录成功' : '登录失败')
-                        if (result.code == 1) {
+                        alert(result.code === 1 ? '登录成功' : '登录失败')
+                        if (result.code === 1) {
                             this.init()
                             this.setLogin()
                             flush()
@@ -405,7 +410,7 @@ const indexHtmlString = `<!DOCTYPE html>
                 setCookie('login', 'login')
             },
             getLogin() {
-                return getCookie('login') == 'login'
+                return getCookie('login') === 'login'
             },
             init() {
                 this.token = null
@@ -416,27 +421,44 @@ const indexHtmlString = `<!DOCTYPE html>
     const uploadFileVue = new Vue({
         el: '#uploadFileForm',
         data: {
-            file: null,
+            files: [],
             sort: '',
-            date: formatDate(new Date(), 'yyyyMMdd'),
+            date: formatDate(new Date(), 'YYYYMMDD'),
             filePath: null,
             loading: false
         },
         methods: {
-            upload() {
-                if (this.file == null || this.filePath == null || this.filePath == '') {
-                    alert('文件或者文件路径为空')
+            uploads() {
+                if (this.files === undefined || this.files == null || this.files.length === 0) {
+                    alert('还没有选择文件')
+                    return
+                }
+                for (let i = 0; i < this.files.length; i++) {
+                    if (this.files[i] === undefined || this.files[i] == null) {
+                        continue
+                    }
+                    this.upload(this.files[i])
+                }
+            },
+            upload(file) {
+                if (file === undefined || file == null) {
+                    alert('文件或为空')
+                    return
+                }
+                const filePath = createFilePath(this.sort, this.date, file.name)
+                if (filePath === undefined || filePath == null || filePath === '') {
+                    alert('文件路径为空')
                     return
                 }
                 this.loading = true
                 const param = new FormData()
-                param.append("filePath", this.filePath)
-                param.append("file", this.file)
+                param.append("filePath", filePath)
+                param.append("file", file)
                 instance.post("admin/uploadFile", param, {headers: {'Content-Type': 'multipart/form-data'}})
                     .then(response => {
                         this.loading = false
                         const result = response.data
-                        if (result.code == 1) {
+                        if (result.code === 1) {
                             this.init()
                             flush()
                         } else {
@@ -452,12 +474,12 @@ const indexHtmlString = `<!DOCTYPE html>
                 if (this.sort != null) {
                     this.sort = this.sort.replace(/\s/g, '');
                 }
-                if (this.file != null) {
-                    this.filePath = createFilePath(this.sort, this.date, this.file.name)
+                if (this.files !== undefined && this.files != null && this.files.length > 0) {
+                    this.filePath = createFilePath(this.sort, this.date, this.files[0].name)
                 }
             },
             init() {
-                this.file = null
+                this.files = []
                 this.filePath = null
             }
         }
@@ -466,24 +488,53 @@ const indexHtmlString = `<!DOCTYPE html>
     const uploadUrlVue = new Vue({
         el: '#uploadUrlForm',
         data: {
-            url: null,
+            urls: '',
             sort: '',
-            date: formatDate(new Date(), 'yyyyMMdd'),
+            date: formatDate(new Date(), 'YYYYMMDD'),
             filePath: null,
             loading: false
         },
+        computed: {
+            row() {
+                let row = this.urls.split('\n').length
+                row = row <= 0 ? 3 : row
+                return row
+            }
+        },
         methods: {
-            upload() {
-                if (this.url == null || this.url == '' || this.filePath == null || this.filePath == '') {
-                    alert('URL或者文件路径为空')
+            uploads() {
+                if (this.urls === undefined || this.urls == null || this.urls === '') {
+                    alert('URL为空')
+                    return
+                }
+                const urls = this.urls.split('\n')
+                for (let i = 0; i < urls.length; i++) {
+                    if (urls[i] === undefined || urls[i] == null || urls[i] === '') {
+                        continue
+                    }
+                    this.upload(urls[i])
+                }
+            },
+            upload(url) {
+                if (url === undefined || url == null || url === '') {
+                    alert('URL为空')
+                    return
+                }
+                let filename = url.split('//')
+                filename = filename[filename.length - 1]
+                filename = filename.split('?')
+                filename = filename[0].replace(/:/g, '_').replace(/\//g, '-').replace(/\\/g, '-')
+                const filePath = createFilePath(this.sort, this.date, filename)
+                if (filePath === undefined || filePath == null || filePath === '') {
+                    alert('文件路径为空')
                     return
                 }
                 this.loading = true
-                instance.post("admin/uploadUrl", Qs.stringify({filePath: this.filePath, url: this.url}))
+                instance.post("admin/uploadUrl", Qs.stringify({filePath: filePath, url: url}))
                     .then(response => {
                         this.loading = false
                         const result = response.data
-                        if (result.code == 1) {
+                        if (result.code === 1) {
                             this.init()
                             flush()
                         } else {
@@ -499,8 +550,11 @@ const indexHtmlString = `<!DOCTYPE html>
                 if (this.sort != null) {
                     this.sort = this.sort.replace(/\s/g, '');
                 }
-                if (this.url != null) {
-                    let filename = this.url.split('//')
+                if (this.urls !== undefined && this.urls != null && this.urls !== '') {
+                    this.urls = this.urls + '\n'
+
+                    const url = this.urls.split('\n')[0]
+                    let filename = url.split('//')
                     filename = filename[filename.length - 1]
                     filename = filename.split('?')
                     filename = filename[0].replace(/:/g, '_').replace(/\//g, '-').replace(/\\/g, '-')
@@ -508,7 +562,7 @@ const indexHtmlString = `<!DOCTYPE html>
                 }
             },
             init() {
-                this.url = null
+                this.urls = ''
                 this.filePath = null
             }
         }
@@ -556,8 +610,8 @@ const indexHtmlString = `<!DOCTYPE html>
                     .then(response => {
                         this.loading = false
                         const result = response.data
-                        if (result.code == 1) {
-                            if (result.data == null || result.data.length == 0) {
+                        if (result.code === 1) {
+                            if (result.data == null || result.data.length === 0) {
                                 alert('没有最新文件')
                             }
                             this.infos = initFileInfos(result.data)
@@ -573,11 +627,11 @@ const indexHtmlString = `<!DOCTYPE html>
             openFile(path) {
                 let index = 0
                 for (; index < this.infos.length; index++) {
-                    if (this.infos[index].path == path) {
+                    if (this.infos[index].path === path) {
                         break
                     }
                 }
-                if (index == this.infos.length) {
+                if (index === this.infos.length) {
                     alert('非法打开文件的路径: ' + path)
                     return
                 }
@@ -590,11 +644,11 @@ const indexHtmlString = `<!DOCTYPE html>
             info(path) {
                 let index = 0
                 for (; index < this.infos.length; index++) {
-                    if (this.infos[index].path == path) {
+                    if (this.infos[index].path === path) {
                         break
                     }
                 }
-                if (index == this.infos.length) {
+                if (index === this.infos.length) {
                     alert('非法查询文件的路径: ' + path)
                     return
                 }
@@ -603,11 +657,11 @@ const indexHtmlString = `<!DOCTYPE html>
             deleteFile(path) {
                 let index = 0
                 for (; index < this.infos.length; index++) {
-                    if (this.infos[index].path == path) {
+                    if (this.infos[index].path === path) {
                         break
                     }
                 }
-                if (index == this.infos.length) {
+                if (index === this.infos.length) {
                     alert('非法删除文件的路径: ' + path)
                     return
                 }
@@ -625,7 +679,7 @@ const indexHtmlString = `<!DOCTYPE html>
         },
         methods: {
             pull() {
-                if (this.pullSyncHost == null || this.pullSyncHost == '' || this.token == null || this.token == '') {
+                if (this.pullSyncHost == null || this.pullSyncHost === '' || this.token == null || this.token === '') {
                     alert('pull同步URL或者token为空')
                     return
                 }
@@ -635,7 +689,7 @@ const indexHtmlString = `<!DOCTYPE html>
                         this.loading = false
                         const result = response.data
                         alert('失败数量: ' + result.data + ', 失败原因: ' + result.message)
-                        if (result.code == 1) {
+                        if (result.code === 1) {
                             this.init()
                             flush()
                         }
@@ -661,7 +715,7 @@ const indexHtmlString = `<!DOCTYPE html>
         },
         methods: {
             push() {
-                if (this.pushSyncHost == null || this.pushSyncHost == '' || this.token == null || this.token == '') {
+                if (this.pushSyncHost == null || this.pushSyncHost === '' || this.token == null || this.token === '') {
                     alert('push同步URL或者token为空')
                     return
                 }
@@ -671,7 +725,7 @@ const indexHtmlString = `<!DOCTYPE html>
                         this.loading = false
                         const result = response.data
                         alert('失败数量: ' + result.data + ', 失败原因: ' + result.message)
-                        if (result.code == 1) {
+                        if (result.code === 1) {
                             this.init()
                             flush()
                         }
@@ -695,7 +749,7 @@ const indexHtmlString = `<!DOCTYPE html>
         },
         methods: {
             go(index) {
-                if (index == -1) {
+                if (index === -1) {
                     fileInfoVue.init('/')
                     return
                 }
@@ -706,7 +760,7 @@ const indexHtmlString = `<!DOCTYPE html>
                 const names = path.split('/')
                 let filePath = ''
                 for (let i = 0; i < names.length; i++) {
-                    if (names[i] == '') {
+                    if (names[i] === '') {
                         continue
                     }
                     filePath = filePath + '/' + names[i]
@@ -759,8 +813,8 @@ const indexHtmlString = `<!DOCTYPE html>
                     .then(response => {
                         this.loading = false
                         const result = response.data
-                        if (result.code == 1) {
-                            if (result.data == null || result.data.length == 0) {
+                        if (result.code === 1) {
+                            if (result.data == null || result.data.length === 0) {
                                 alert('此目录下没有文件')
                             }
                             this.infos = initFileInfos(result.data)
@@ -781,11 +835,11 @@ const indexHtmlString = `<!DOCTYPE html>
             openFile(path) {
                 let index = 0
                 for (; index < this.infos.length; index++) {
-                    if (this.infos[index].path == path) {
+                    if (this.infos[index].path === path) {
                         break
                     }
                 }
-                if (index == this.infos.length) {
+                if (index === this.infos.length) {
                     alert('非法打开文件的路径: ' + path)
                     return
                 }
@@ -798,11 +852,11 @@ const indexHtmlString = `<!DOCTYPE html>
             info(path) {
                 let index = 0
                 for (; index < this.infos.length; index++) {
-                    if (this.infos[index].path == path) {
+                    if (this.infos[index].path === path) {
                         break
                     }
                 }
-                if (index == this.infos.length) {
+                if (index === this.infos.length) {
                     alert('非法查询文件的路径: ' + path)
                     return
                 }
@@ -811,11 +865,11 @@ const indexHtmlString = `<!DOCTYPE html>
             deleteFile(path) {
                 let index = 0
                 for (; index < this.infos.length; index++) {
-                    if (this.infos[index].path == path) {
+                    if (this.infos[index].path === path) {
                         break
                     }
                 }
-                if (index == this.infos.length) {
+                if (index === this.infos.length) {
                     alert('非法删除文件的路径: ' + path)
                     return
                 }
@@ -837,8 +891,8 @@ const indexHtmlString = `<!DOCTYPE html>
             .then(response => {
                 infos[index].loading = false
                 const result = response.data
-                alert(result.code == 1 ? '删除成功' : '删除失败')
-                if (result.code == 1) {
+                alert(result.code === 1 ? '删除成功' : '删除失败')
+                if (result.code === 1) {
                     flush()
                 }
             })
@@ -854,7 +908,7 @@ const indexHtmlString = `<!DOCTYPE html>
             .then(response => {
                 infos[index].loading = false
                 const result = response.data
-                if (result.code == 1) {
+                if (result.code === 1) {
                     const info = initFileInfo(result.data)
                     infos[index].size = info.size
                     infos[index].count = info.count
@@ -901,18 +955,18 @@ const indexHtmlString = `<!DOCTYPE html>
 
     function formatFileSize(size) {
         if (size < 0) return '非法大小: ' + size
-        if (size == 0) return '0 B'
+        if (size === 0) return '0 B'
         var s = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
         var e = Math.floor(Math.log(size) / Math.log(1024));
-        return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + "" + s[e];
+        return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + '' + s[e];
     }
 
     function createFilePath(sort, date, filename) {
         let filePath = filename
-        if (date != null && date != '') {
+        if (date != null && date !== '') {
             filePath = date + '/' + filePath
         }
-        if (sort != null && sort != '') {
+        if (sort != null && sort !== '') {
             filePath = sort + '/' + filePath
         }
         return filePath
@@ -921,35 +975,34 @@ const indexHtmlString = `<!DOCTYPE html>
     function formatDate(date, fmt) {
         let o = {
             'M+': date.getMonth() + 1, //月份
-            'd+': date.getDate(), //日
-            'h+': date.getHours(), //小时
+            'D+': date.getDate(), //日
+            'H+': date.getHours(), //小时
             'm+': date.getMinutes(), //分
             's+': date.getSeconds(), //秒
             'q+': Math.floor((date.getMonth() + 3) / 3), //季度
             'S': date.getMilliseconds() //毫秒
         }
-        if (/(y+)/.test(fmt)) {
+        if (/(Y+)/.test(fmt)) {
             fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length))
         }
         for (let k in o) {
             if (new RegExp('(' + k + ')').test(fmt)) {
-                fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1)
-                    ? (o[k]) : (('00' + o[k]).substr(('' + o[k]).length)))
+                fmt = fmt.replace(RegExp.$1, (RegExp.$1.length === 1) ? (o[k]) : (('00' + o[k]).substr(('' + o[k]).length)))
             }
         }
         return fmt
     }
 
     function getCookieFromString(cookieString, name) {
-        if (cookieString == null) {
+        if (cookieString === null) {
             return null
         }
         let nameEQ = name + '='
         let ca = cookieString.split(';')
         for (let i = 0; i < ca.length; i++) {
             let c = ca[i]
-            while (c.charAt(0) == ' ') c = c.substring(1, c.length)
-            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length)
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length)
+            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
         }
         return null
     }
