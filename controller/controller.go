@@ -656,10 +656,18 @@ const indexHtmlString = `<!DOCTYPE html>
                 writeClipboard('/' + file.url)
             },
             copyLong(file) {
-                writeClipboard(document.location.origin + '/' + file.url)
+                let url = window.location.href
+                if (!endsWith(url, '/')) {
+                    url = url + '/'
+                }
+                writeClipboard(url + file.url)
             },
             copyMarkdown(file) {
-                writeClipboard('![' + file.name + '](' + document.location.origin + '/' + file.url + ')')
+                let url = window.location.href
+                if (!endsWith(url, '/')) {
+                    url = url + '/'
+                }
+                writeClipboard('![' + file.name + '](' + url + file.url + ')')
             },
         }
     })
@@ -852,10 +860,18 @@ const indexHtmlString = `<!DOCTYPE html>
                 writeClipboard('/' + file.url)
             },
             copyLong(file) {
-                writeClipboard(document.location.origin + '/' + file.url)
+                let url = window.location.href
+                if (!endsWith(url, '/')) {
+                    url = url + '/'
+                }
+                writeClipboard(url + file.url)
             },
             copyMarkdown(file) {
-                writeClipboard('![' + file.name + '](' + document.location.origin + '/' + file.url + ')')
+                let url = window.location.href
+                if (!endsWith(url, '/')) {
+                    url = url + '/'
+                }
+                writeClipboard('![' + file.name + '](' + url + file.url + ')')
             },
         }
     })
@@ -1011,6 +1027,10 @@ const indexHtmlString = `<!DOCTYPE html>
         let date = new Date()
         date.setTime(date.getTime() + (1000 * 60 * 60))
         document.cookie = key + '=' + value + '; expires=' + date.toGMTString()
+    }
+
+    function endsWith(string, end) {
+        return string.substring(string.length - end.length) === end
     }
 
     if (loginFormVue.getLogin()) {
