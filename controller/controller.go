@@ -287,7 +287,11 @@ const indexHtmlString = `<!DOCTYPE html>
             <code>{{data.item.md5}}</code>
         </template>
         <template v-slot:cell(url)="data">
-            <b-form-input size="sm" type="text" placeholder="url" disabled :value="'/'+data.item.url"></b-form-input>
+            <b-button-group>
+                <b-button size="sm" variant="outline-success" @click="copyShort(data.item)">short</b-button>
+                <b-button size="sm" variant="outline-primary" @click="copyLong(data.item)">long</b-button>
+                <b-button size="sm" variant="outline-warning" @click="copyMarkdown(data.item)">markdown</b-button>
+            </b-button-group>
         </template>
         <template v-slot:cell(deal)="data">
             <b-button-group>
@@ -341,9 +345,11 @@ const indexHtmlString = `<!DOCTYPE html>
             <code>{{data.item.md5}}</code>
         </template>
         <template v-slot:cell(url)="data">
-            <b-form-input size="sm" type="text" placeholder="url" disabled v-if="data.item.isFile"
-                          :value="'/'+data.item.url">
-            </b-form-input>
+            <b-button-group v-if="data.item.isFile">
+                <b-button size="sm" variant="outline-success" @click="copyShort(data.item)">short</b-button>
+                <b-button size="sm" variant="outline-primary" @click="copyLong(data.item)">long</b-button>
+                <b-button size="sm" variant="outline-warning" @click="copyMarkdown(data.item)">markdown</b-button>
+            </b-button-group>
         </template>
         <template v-slot:cell(deal)="data">
             <b-button-group>
@@ -572,33 +578,12 @@ const indexHtmlString = `<!DOCTYPE html>
         el: '#lastFileInfoTable',
         data: {
             fields: [
-                {
-                    key: 'name',
-                    label: 'name',
-                    sortable: true,
-                },
-                {
-                    key: 'size',
-                    label: 'size',
-                    sortable: true,
-                },
-                {
-                    key: 'count',
-                    label: 'count',
-                    sortable: true,
-                },
-                {
-                    key: 'md5',
-                    label: 'md5',
-                },
-                {
-                    key: 'url',
-                    label: 'url',
-                },
-                {
-                    key: 'deal',
-                    label: 'deal',
-                },
+                {key: 'name', label: 'name', sortable: true,},
+                {key: 'size', label: 'size', sortable: true,},
+                {key: 'count', label: 'count', sortable: true,},
+                {key: 'md5', label: 'md5',},
+                {key: 'url', label: 'url',},
+                {key: 'deal', label: 'deal',},
             ],
             infos: [],
             loading: false,
@@ -666,6 +651,15 @@ const indexHtmlString = `<!DOCTYPE html>
                     return
                 }
                 removeFile(this.infos, index)
+            },
+            copyShort(file) {
+                writeClipboard('/' + file.url)
+            },
+            copyLong(file) {
+                writeClipboard(document.location.origin + '/' + file.url)
+            },
+            copyMarkdown(file) {
+                writeClipboard('![' + file.name + '](' + document.location.origin + '/' + file.url + ')')
             },
         }
     })
@@ -774,33 +768,12 @@ const indexHtmlString = `<!DOCTYPE html>
         el: '#fileInfoTable',
         data: {
             fields: [
-                {
-                    key: 'name',
-                    label: 'name',
-                    sortable: true,
-                },
-                {
-                    key: 'size',
-                    label: 'size',
-                    sortable: true,
-                },
-                {
-                    key: 'count',
-                    label: 'count',
-                    sortable: true,
-                },
-                {
-                    key: 'md5',
-                    label: 'md5',
-                },
-                {
-                    key: 'url',
-                    label: 'url',
-                },
-                {
-                    key: 'deal',
-                    label: 'deal',
-                },
+                {key: 'name', label: 'name', sortable: true,},
+                {key: 'size', label: 'size', sortable: true,},
+                {key: 'count', label: 'count', sortable: true,},
+                {key: 'md5', label: 'md5',},
+                {key: 'url', label: 'url',},
+                {key: 'deal', label: 'deal',},
             ],
             folderPath: '',
             infos: [],
@@ -875,6 +848,15 @@ const indexHtmlString = `<!DOCTYPE html>
                 }
                 removeFile(this.infos, index)
             },
+            copyShort(file) {
+                writeClipboard('/' + file.url)
+            },
+            copyLong(file) {
+                writeClipboard(document.location.origin + '/' + file.url)
+            },
+            copyMarkdown(file) {
+                writeClipboard('![' + file.name + '](' + document.location.origin + '/' + file.url + ')')
+            },
         }
     })
 
@@ -944,7 +926,7 @@ const indexHtmlString = `<!DOCTYPE html>
         }
         info.loading = false
         info.url = encodeURI(info.url)
-        if (info.size != undefined) {
+        if (info.size !== undefined) {
             info.size = formatFileSize(info.size)
         }
         if (info.url.startsWith('/')) {
@@ -953,12 +935,26 @@ const indexHtmlString = `<!DOCTYPE html>
         return info
     }
 
+    function writeClipboard(text) {
+        const textarea = document.createElement('textarea')
+        textarea.style.opacity = 0
+        textarea.style.position = 'absolute'
+        textarea.style.left = '-100000px'
+        document.body.appendChild(textarea)
+
+        textarea.value = text
+        textarea.select()
+        textarea.setSelectionRange(0, text.length)
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+    }
+
     function formatFileSize(size) {
         if (size < 0) return '非法大小: ' + size
-        if (size === 0) return '0 B'
-        var s = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-        var e = Math.floor(Math.log(size) / Math.log(1024));
-        return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + '' + s[e];
+        if (size === 0) return '0B'
+        var s = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+        var e = Math.floor(Math.log(size) / Math.log(1024))
+        return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + '' + s[e]
     }
 
     function createFilePath(sort, date, filename) {
