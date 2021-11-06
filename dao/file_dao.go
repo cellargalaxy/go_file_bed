@@ -2,9 +2,9 @@ package dao
 
 import (
 	"fmt"
-	"github.com/cellargalaxy/go-file-bed/config"
-	"github.com/cellargalaxy/go-file-bed/model"
-	"github.com/cellargalaxy/go-file-bed/utils"
+	"github.com/cellargalaxy/go_file_bed/config"
+	"github.com/cellargalaxy/go_file_bed/model"
+	"github.com/cellargalaxy/go_file_bed/utils"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"

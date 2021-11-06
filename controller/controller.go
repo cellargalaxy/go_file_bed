@@ -2,9 +2,9 @@ package controller
 
 import (
 	"fmt"
-	"github.com/cellargalaxy/go-file-bed/config"
-	_ "github.com/cellargalaxy/go-file-bed/docs"
-	"github.com/cellargalaxy/go-file-bed/service"
+	"github.com/cellargalaxy/go_file_bed/config"
+	_ "github.com/cellargalaxy/go_file_bed/docs"
+	"github.com/cellargalaxy/go_file_bed/service"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"

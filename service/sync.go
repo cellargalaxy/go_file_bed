@@ -3,9 +3,9 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cellargalaxy/go-file-bed/config"
-	"github.com/cellargalaxy/go-file-bed/dao"
-	"github.com/cellargalaxy/go-file-bed/model"
+	"github.com/cellargalaxy/go_file_bed/config"
+	"github.com/cellargalaxy/go_file_bed/dao"
+	"github.com/cellargalaxy/go_file_bed/model"
 	"github.com/robfig/cron"
 	"github.com/sirupsen/logrus"
 	"io"

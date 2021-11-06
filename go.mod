@@ -1,4 +1,4 @@
-module github.com/cellargalaxy/go-file-bed
+module github.com/cellargalaxy/go_file_bed
 
 go 1.16
 
