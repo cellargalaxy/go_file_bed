@@ -3,7 +3,7 @@ package model
 type FileSimpleInfo struct {
 	Path   string `json:"path"`
 	Name   string `json:"name"`
-	IsFile bool   `json:"isFile"`
+	IsFile bool   `json:"is_file"`
 	Url    string `json:"url"`
 }
 

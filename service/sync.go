@@ -118,7 +118,7 @@ func pushFile(client *http.Client, receivePushSyncFileUrl string, info model.Fil
 			logrus.WithFields(logrus.Fields{"err": err}).Error("创建文件表单失败")
 			return
 		}
-		dao.CopyFile(info.Path, formFile)
+		dao.ReadFileWithWriter(info.Path, formFile)
 	}()
 
 	contentType := writer.FormDataContentType()
