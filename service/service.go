@@ -2,7 +2,6 @@ package service
 
 import (
 	"crypto/tls"
-	"fmt"
 	"github.com/cellargalaxy/go_common/util"
 	"github.com/cellargalaxy/go_file_bed/config"
 	"github.com/go-resty/resty/v2"
@@ -14,7 +13,7 @@ import (
 var httpClient *resty.Client
 
 func init() {
-	httpClient = createHttpClient(config.Config.Timeout, config.Config.Sleep, config.Config.Retry)
+	httpClient = createHttpClient(config.Config.Timeout, 0, config.Config.Retry)
 }
 
 func createHttpClient(timeout, sleep time.Duration, retry int) *resty.Client {
@@ -22,7 +21,7 @@ func createHttpClient(timeout, sleep time.Duration, retry int) *resty.Client {
 		SetTimeout(timeout).
 		SetRetryCount(retry).
 		SetRetryWaitTime(sleep).
-		SetRetryMaxWaitTime(5 * time.Minute).
+		SetRetryMaxWaitTime(sleep).
 		AddRetryCondition(func(response *resty.Response, err error) bool {
 			ctx := util.CreateLogCtx()
 			if response != nil && response.Request != nil {
@@ -39,24 +38,7 @@ func createHttpClient(timeout, sleep time.Duration, retry int) *resty.Client {
 			return isRetry
 		}).
 		SetRetryAfter(func(client *resty.Client, response *resty.Response) (time.Duration, error) {
-			ctx := util.CreateLogCtx()
-			if response != nil && response.Request != nil {
-				ctx = response.Request.Context()
-			}
-			var attempt int
-			if response != nil && response.Request != nil {
-				attempt = response.Request.Attempt
-			}
-			if attempt > retry {
-				logrus.WithContext(ctx).WithFields(logrus.Fields{"attempt": attempt}).Error("HTTP请求异常，超过最大重试次数")
-				return 0, fmt.Errorf("HTTP请求异常，超过最大重试次数")
-			}
-			duration := util.WareDuration(sleep)
-			for i := 0; i < attempt-1; i++ {
-				duration *= 10
-			}
-			logrus.WithContext(ctx).WithFields(logrus.Fields{"attempt": attempt, "duration": duration}).Warn("HTTP请求异常，休眠重试")
-			return duration, nil
+			return sleep, nil
 		}).
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	return httpClient

@@ -25,7 +25,6 @@ var lastFileInfoLock sync.Mutex
 
 func AddUrl(ctx context.Context, filePath string, url string) (*model.FileSimpleInfo, error) {
 	response, err := httpClient.R().SetContext(ctx).
-		SetHeader(util.LogIdKey, fmt.Sprint(util.GetLogId(ctx))).
 		SetHeader("User-Agent", userAgent).
 		Get(url)
 
@@ -97,14 +96,26 @@ func GetFileCompleteInfo(ctx context.Context, fileOrFolderPath string) (*model.F
 	return info, err
 }
 
-func ListLastFileInfos(ctx context.Context) ([]model.FileSimpleInfo, error) {
-	return lastFileInfos, nil
-}
-
-func ListFolderInfo(ctx context.Context, folderPath string) ([]model.FileSimpleInfo, error) {
+func ListFileSimpleInfo(ctx context.Context, folderPath string) ([]model.FileSimpleInfo, error) {
 	infos, err := dao.ListFileSimpleInfo(ctx, folderPath)
+	if err != nil {
+		return nil, err
+	}
 	infos = initFileSimpleInfos(ctx, infos)
 	return infos, err
+}
+
+func ListFileCompleteInfo(ctx context.Context, folderPath string) ([]model.FileCompleteInfo, error) {
+	infos, err := dao.ListFileCompleteInfo(ctx, folderPath)
+	if err != nil {
+		return nil, err
+	}
+	infos = initFileCompleteInfos(ctx, infos)
+	return infos, err
+}
+
+func ListLastFileInfos(ctx context.Context) ([]model.FileSimpleInfo, error) {
+	return lastFileInfos, nil
 }
 
 func addLastFileInfo(ctx context.Context, info *model.FileSimpleInfo) {
