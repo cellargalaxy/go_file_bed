@@ -44,13 +44,13 @@ func DeleteFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 	//将`/aaa/bbb/`变为`/aaa/bbb`
 	folderPath = util.ClearPath(ctx, folderPath)
 	for i := 0; i < 1024; i++ {
-		logrus.WithFields(logrus.Fields{"folderPath": folderPath}).Info("删除文件，删除父文件夹")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"folderPath": folderPath}).Info("删除文件，删除父文件夹")
 		files, err := util.ListFile(ctx, folderPath)
 		if err != nil {
 			return info, err
 		}
 		if len(files) > 0 {
-			logrus.WithFields(logrus.Fields{"folderPath": folderPath}).Info("删除文件，父文件夹不为空")
+			logrus.WithContext(ctx).WithFields(logrus.Fields{"folderPath": folderPath}).Info("删除文件，父文件夹不为空")
 			return info, nil
 		}
 		err = util.RemoveFile(ctx, folderPath)
@@ -72,7 +72,7 @@ func SelectFileSimpleInfo(ctx context.Context, fileOrFolderPath string) (*model.
 	}
 	pathInfo := util.GetPathInfo(ctx, bedPath)
 	if pathInfo == nil {
-		logrus.WithFields(logrus.Fields{}).Warn("查询文件简单信息，路径不存在")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Warn("查询文件简单信息，路径不存在")
 		return nil, nil
 	}
 
@@ -90,7 +90,7 @@ func SelectFileCompleteInfo(ctx context.Context, fileOrFolderPath string) (*mode
 	}
 	pathInfo := util.GetPathInfo(ctx, bedPath)
 	if pathInfo == nil {
-		logrus.WithFields(logrus.Fields{}).Warn("查询文件完整信息，路径不存在")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Warn("查询文件完整信息，路径不存在")
 		return nil, nil
 	}
 
@@ -127,7 +127,7 @@ func SelectFolderSimpleInfo(ctx context.Context, folderPath string) ([]model.Fil
 	}
 	pathInfo := util.GetPathInfo(ctx, bedPath)
 	if pathInfo == nil {
-		logrus.WithFields(logrus.Fields{}).Warn("查询文件简单信息，路径不存在")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Warn("查询文件简单信息，路径不存在")
 		return nil, nil
 	}
 
@@ -163,7 +163,7 @@ func SelectFolderCompleteInfo(ctx context.Context, folderPath string) ([]model.F
 	}
 	pathInfo := util.GetPathInfo(ctx, bedPath)
 	if pathInfo == nil {
-		logrus.WithFields(logrus.Fields{}).Warn("查询文件完整信息，路径不存在")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Warn("查询文件完整信息，路径不存在")
 		return nil, nil
 	}
 
@@ -222,10 +222,10 @@ func selectFolderSizeAndCount(ctx context.Context, folderPath string) (int64, in
 
 func createBedPath(ctx context.Context, fileOrFolderPath string) (string, error) {
 	bedPath := util.ClearPath(ctx, path.Join(model.FileBedPath, fileOrFolderPath))
-	logrus.WithFields(logrus.Fields{"bedPath": bedPath}).Info("创建床文件路径")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"bedPath": bedPath}).Info("创建床文件路径")
 
 	if !strings.HasPrefix(bedPath, model.FileBedPath) {
-		logrus.WithFields(logrus.Fields{"bedPath": bedPath}).Error("文件路径不在床路径下")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"bedPath": bedPath}).Error("文件路径不在床路径下")
 		return "", fmt.Errorf("文件路径不在床路径下")
 	}
 

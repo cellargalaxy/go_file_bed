@@ -54,15 +54,15 @@ func AddUrl(ctx context.Context, filePath string, url string) (*model.FileSimple
 
 func AddFile(ctx context.Context, filePath string, reader io.Reader) (*model.FileSimpleInfo, error) {
 	fileExt := path.Ext(filePath)
-	logrus.WithFields(logrus.Fields{"fileExt": fileExt}).Info("添加文件，文件拓展名")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"fileExt": fileExt}).Info("添加文件，文件拓展名")
 	format, err := imaging.FormatFromExtension(fileExt)
-	logrus.WithFields(logrus.Fields{"format": format, "err": err}).Info("添加文件，解析图片拓展名")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"format": format, "err": err}).Info("添加文件，解析图片拓展名")
 
 	if err == nil && format != imaging.GIF {
 		buffer := &bytes.Buffer{}
 		_, err = io.Copy(buffer, reader)
 		if err != nil {
-			logrus.WithFields(logrus.Fields{"err": err}).Error("添加文件，读取图片数据异常")
+			logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加文件，读取图片数据异常")
 			return nil, err
 		}
 

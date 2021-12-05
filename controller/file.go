@@ -25,12 +25,12 @@ func addFile(ctx *gin.Context) {
 	filePath := ctx.Request.FormValue("path")
 	file, header, err := ctx.Request.FormFile("file")
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"err": err}).Error("添加文件，读取表单文件异常")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加文件，读取表单文件异常")
 		ctx.JSON(http.StatusOK, util.CreateErrResponse(err.Error()))
 		return
 	}
 	defer file.Close()
-	logrus.WithFields(logrus.Fields{"filePath": filePath, "filename": header.Filename}).Info("添加文件")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"filePath": filePath, "filename": header.Filename}).Info("添加文件")
 
 	ctx.JSON(http.StatusOK, util.CreateResponse(controller.AddFile(ctx, filePath, file)))
 }

@@ -18,7 +18,7 @@ func CompressionImage(ctx context.Context, buffer *bytes.Buffer) (*bytes.Buffer,
 	imageBytes := buffer.Bytes()
 	img, err := imaging.Decode(bytes.NewReader(imageBytes))
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"err": err}).Error("压缩图片，图片解码异常")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("压缩图片，图片解码异常")
 		return nil, fmt.Errorf("压缩图片，图片解码异常: %+v", err)
 	}
 
@@ -28,7 +28,7 @@ func CompressionImage(ctx context.Context, buffer *bytes.Buffer) (*bytes.Buffer,
 	newBuffer := &bytes.Buffer{}
 	err = imaging.Encode(newBuffer, img, config.Config.ImageSaveFormat, encodeOption)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"err": err}).Error("压缩图片，图片压缩异常")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("压缩图片，图片压缩异常")
 		return nil, fmt.Errorf("压缩图片，图片压缩异常: %+v", err)
 	}
 	return newBuffer, nil
@@ -45,6 +45,6 @@ func createJPEGQuality(ctx context.Context, size int) imaging.EncodeOption {
 	power := float64(size) / config.Config.ImageTargetSize
 	qualityRatio := math.Pow(0.99, power)
 	quality := int(config.Config.JpegMinQuality + (config.Config.JpegMaxQuality-config.Config.JpegMinQuality)*qualityRatio)
-	logrus.WithFields(logrus.Fields{"power": power, "qualityRatio": qualityRatio, "quality": quality}).Info("JPEG图片质量")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"power": power, "qualityRatio": qualityRatio, "quality": quality}).Info("JPEG图片质量")
 	return imaging.JPEGQuality(quality)
 }
