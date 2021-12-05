@@ -71,7 +71,7 @@ function deAESCBC(text, secret) {
     return decrypt.toString(CryptoJS.enc.Utf8)
 }
 
-const secretKey = 'secret'
+const secretKey = document.location.pathname + '@secret'
 
 function getSecret() {
     return localStorage.getItem(secretKey)
@@ -163,8 +163,12 @@ function getQueryString(name) {
     return null
 }
 
-function startsWith(string, start) {
+function startWith(string, start) {
     return string.indexOf(start) === 0
+}
+
+function endWith(string, end) {
+    return string.substring(string.length - end.length) === end
 }
 
 function containWith(string, sub) {

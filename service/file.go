@@ -31,6 +31,7 @@ func AddUrl(ctx context.Context, filePath string, url string) (*model.FileSimple
 
 	response, err := httpClient.R().SetContext(ctx).
 		SetHeader("User-Agent", userAgent).
+		SetDoNotParseResponse(true).
 		Get(url)
 
 	if err != nil {

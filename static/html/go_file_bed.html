@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>go_file_bed</title>
+    <link type="text/css" rel="stylesheet" href="../css/bootstrap.min.css"/>
+    <link type="text/css" rel="stylesheet" href="../css/bootstrap-vue.min.css"/>
+</head>
+<body>
+<div class="container">
+    <form id="login">
+        <b-input-group size="sm">
+            <b-form-input type="password" placeholder="secret" v-model="secret"></b-form-input>
+            <b-form-input type="number" placeholder="tokenExp" v-model="tokenExp"></b-form-input>
+            <b-button size="sm" variant="outline-primary" @click="login">login</b-button>
+        </b-input-group>
+    </form>
+
+    <br/>
+
+    <form id="add_file_form">
+        <b-input-group>
+            <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="date" v-model="date" @input="input"></b-form-input>
+        </b-input-group>
+        <b-input-group>
+            <b-form-file multiple size="sm" v-model="files" @input="input"></b-form-file>
+        </b-input-group>
+        <b-input-group>
+            <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
+            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="upload">upload</b-button>
+        </b-input-group>
+    </form>
+
+    <br/>
+
+    <form id="add_url_form">
+        <b-input-group>
+            <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="date" v-model="date" @input="input"></b-form-input>
+        </b-input-group>
+        <b-input-group>
+            <b-form-textarea size="sm" placeholder="urls" v-model="urls" :rows="row" @input="input"></b-form-textarea>
+        </b-input-group>
+        <b-input-group>
+            <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
+            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="upload">upload</b-button>
+        </b-input-group>
+    </form>
+
+    <br/>
+
+    <b-table id="last_file_info_table" stacked="xl" striped hover responsive small
+             :fields="fields" :items="infos" :busy="loading">
+        <template #cell(name)="data">
+            <code>{{data.item.name}}</code>
+        </template>
+        <template #cell(md5)="data">
+            <code>{{data.item.md5}}</code>
+        </template>
+        <template #cell(url)="data">
+            <b-button-group>
+                <b-button size="sm" variant="outline-success" @click="copyShort(data.item)">short</b-button>
+                <b-button size="sm" variant="outline-primary" @click="copyLong(data.item)">long</b-button>
+                <b-button size="sm" variant="outline-warning" @click="copyMarkdown(data.item)">markdown</b-button>
+            </b-button-group>
+        </template>
+        <template #cell(deal)="data">
+            <b-button-group>
+                <b-button size="sm" variant="outline-success" @click="openFile(data.item)">open</b-button>
+                <b-button size="sm" variant="outline-primary" :disabled="data.item.loading"
+                          @click="getFileCompleteInfo(data.item)">info
+                </b-button>
+                <b-button size="sm" variant="outline-danger" :disabled="data.item.loading"
+                          @click="removeFile(data.item)">delete
+                </b-button>
+            </b-button-group>
+        </template>
+
+        <template #table-busy>
+            <div class="text-center text-primary">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>Loading...</strong>
+            </div>
+        </template>
+    </b-table>
+
+    <br/>
+
+    <b-breadcrumb id="file_path_breadcrumb">
+        <b-breadcrumb-item @click="goIndex(-1)">
+            <b-icon icon="house-fill"></b-icon>
+        </b-breadcrumb-item>
+        <b-breadcrumb-item v-for="(breadcrumb, index) in breadcrumbs" @click="goIndex(index)">
+            {{breadcrumb.name}}
+        </b-breadcrumb-item>
+    </b-breadcrumb>
+
+    <b-table id="file_info_table" stacked="xl" striped hover responsive small
+             :fields="fields" :items="infos" :busy="loading">
+        <template #cell(name)="data">
+            <code>{{data.item.name}}</code>
+        </template>
+        <template #cell(md5)="data">
+            <code>{{data.item.md5}}</code>
+        </template>
+        <template #cell(url)="data">
+            <b-button-group v-if="data.item.isFile">
+                <b-button size="sm" variant="outline-success" @click="copyShort(data.item)">short</b-button>
+                <b-button size="sm" variant="outline-primary" @click="copyLong(data.item)">long</b-button>
+                <b-button size="sm" variant="outline-warning" @click="copyMarkdown(data.item)">markdown</b-button>
+            </b-button-group>
+        </template>
+        <template #cell(deal)="data">
+            <b-button-group>
+                <b-button size="sm" variant="outline-success" @click="openFile(data.item)">open</b-button>
+                <b-button size="sm" variant="outline-primary" :disabled="data.item.loading"
+                          @click="getFileCompleteInfo(data.item)">info
+                </b-button>
+                <b-button size="sm" variant="outline-danger" :disabled="data.item.loading"
+                          @click="removeFile(data.item)">delete
+                </b-button>
+            </b-button-group>
+        </template>
+
+        <template #table-busy>
+            <div class="text-center text-primary">
+                <b-spinner class="align-middle"></b-spinner>
+                <strong>Loading...</strong>
+            </div>
+        </template>
+    </b-table>
+
+
+</div>
+</body>
+<script src="../js/vue.min.js"></script>
+<script src="../js/bootstrap-vue.min.js"></script>
+<script src="../js/bootstrap-vue-icons.min.js"></script>
+<script src="../js/qs.min.js"></script>
+<script src="../js/axios.min.js"></script>
+
+<!-- 关于crypto-js的导入与使用：https://www.jianshu.com/p/90540249747d，https://github.com/kjur/jsrsasign/issues/232，https://stackoverflow.com/questions/57416217/cryptojs-encrypt-in-aes-256-cbc-returns-an-unexpected-value -->
+<script src="../js/core.min.js"></script>
+<script src="../js/enc-base64.min.js"></script>
+<script src="../js/md5.min.js"></script>
+<script src="../js/evpkdf.min.js"></script>
+<script src="../js/jsrsasign-all-min.min.js"></script>
+
+<script src="../js/util.js"></script>
+<script src="../js/api.js"></script>
+
+<script>
+    window.onbeforeunload = (event) => 'maybe some data not save'
+
+    let login_vue = new Vue({
+        el: '#login',
+        data: {
+            secret: '',
+            tokenExp: 3,
+        },
+        methods: {
+            async login() {
+                setSecret(this.secret)
+                setTokenExp(this.tokenExp)
+                let promise = ping()
+                let data = await promise
+                if (data !== null) {
+                    alert('登录成功: ' + JSON.stringify(data))
+                }
+            },
+            async logined() {
+                let promise = ping()
+                let data = await promise
+                return data !== null
+            },
+        },
+    })
+
+    const add_file_form_vue = new Vue({
+        el: '#add_file_form',
+        data: {
+            files: [],
+            sort: '',
+            date: formatDate(new Date(), 'YYYYMMDD'),
+            filePath: '',
+            loading: false
+        },
+        methods: {
+            async upload() {
+                if (this.files === undefined || this.files == null || this.files.length === 0) {
+                    alert('还没有选择文件')
+                    return
+                }
+                if (!confirm("确定创建？")) {
+                    return
+                }
+                this.loading = true
+                let promises = []
+                for (let i = 0; i < this.files.length; i++) {
+                    if (this.files[i] === undefined || this.files[i] == null) {
+                        continue
+                    }
+                    let promise = this.addFile(this.files[i])
+                    promises.push(promise)
+                }
+                for (let i = 0; i < promises.length; i++) {
+                    await promises[i]
+                }
+                this.loading = false
+                flush()
+                alert('done')
+            },
+            async addFile(file) {
+                const filePath = createFilePath(this.sort, this.date, file.name)
+                if (filePath === undefined || filePath == null || filePath === '') {
+                    alert('文件路径为空')
+                    return
+                }
+                return addFile(filePath, file)
+            },
+            input() {
+                if (this.sort !== undefined && this.sort != null && this.sort !== '') {
+                    this.sort = this.sort.replace(/\s/g, '');
+                }
+                if (this.files !== undefined && this.files != null && this.files.length > 0) {
+                    this.filePath = createFilePath(this.sort, this.date, this.files[0].name)
+                }
+            },
+            flush() {
+                this.files = []
+                this.sort = ''
+                this.date = formatDate(new Date(), 'YYYYMMDD')
+                this.filePath = ''
+                this.loading = false
+            }
+        }
+    })
+
+    const add_url_form_vue = new Vue({
+        el: '#add_url_form',
+        data: {
+            urls: '',
+            sort: '',
+            date: formatDate(new Date(), 'YYYYMMDD'),
+            filePath: '',
+            loading: false
+        },
+        computed: {
+            row() {
+                let row = this.urls.split('\n').length
+                row = row <= 2 ? 2 : row
+                return row + 1
+            }
+        },
+        methods: {
+            async upload() {
+                if (this.urls === undefined || this.urls == null || this.urls === '') {
+                    alert('URL为空')
+                    return
+                }
+                if (!confirm("确定创建？")) {
+                    return
+                }
+                const urls = this.urls.split('\n')
+                this.loading = true
+                let promises = []
+                for (let i = 0; i < urls.length; i++) {
+                    if (urls[i] === undefined || urls[i] == null || urls[i] === '') {
+                        continue
+                    }
+                    let promise = this.addUrl(urls[i])
+                    promises.push(promise)
+                }
+                for (let i = 0; i < promises.length; i++) {
+                    await promises[i]
+                }
+                this.loading = false
+                flush()
+                alert('done')
+            },
+            addUrl(url) {
+                let filePath = this.createFilePath(url)
+                if (filePath === undefined || filePath == null || filePath === '') {
+                    alert('文件路径为空')
+                    return
+                }
+                return addUrl(filePath, url)
+            },
+            input() {
+                if (this.sort !== undefined && this.sort != null && this.sort !== '') {
+                    this.sort = this.sort.replace(/\s/g, '');
+                }
+                if (this.urls !== undefined && this.urls != null && this.urls !== '') {
+                    let url = this.urls + '\n'
+                    url = url.split('\n')[0]
+                    this.filePath = this.createFilePath(url)
+                }
+            },
+            createFilePath(url) {
+                let filename = url.split('//')
+                filename = filename[filename.length - 1]
+                filename = filename.split('?')
+                filename = filename[0].replace(/:/g, '-').replace(/\//g, '_').replace(/\\/g, '_')
+                return createFilePath(this.sort, this.date, filename)
+            },
+            flush() {
+                this.urls = ''
+                this.sort = ''
+                this.date = formatDate(new Date(), 'YYYYMMDD')
+                this.filePath = ''
+                this.loading = false
+            }
+        }
+    })
+
+    const last_file_info_table_vue = new Vue({
+        el: '#last_file_info_table',
+        data: {
+            fields: [
+                {key: 'name', label: 'name', sortable: true,},
+                {key: 'size', label: 'size', sortable: true,},
+                {key: 'count', label: 'count', sortable: true,},
+                {key: 'md5', label: 'md5',},
+                {key: 'url', label: 'url',},
+                {key: 'deal', label: 'deal',},
+            ],
+            infos: [],
+            loading: false,
+        },
+        methods: {
+            async listLastFileInfo() {
+                this.loading = true
+                let promise = listLastFileInfo()
+                let data = await promise
+                this.loading = false
+                if (data === undefined || data == null) {
+                    return
+                }
+                let infos = data.infos
+                if (infos === undefined || infos == null || infos.length === 0) {
+                    alert('没有最新文件')
+                    return
+                }
+                this.infos = initFileInfos(infos)
+            },
+            openFile(info) {
+                window.open('../../..' + info.url)
+            },
+            async getFileCompleteInfo(info) {
+                info.loading = true
+                let promise = getFileCompleteInfo(info.path)
+                let data = await promise
+                info.loading = false
+                if (data === undefined || data == null) {
+                    return
+                }
+                const completeInfo = initFileInfo(data.info)
+                info['size'] = completeInfo['size']
+                info['count'] = completeInfo['count']
+                info['md5'] = completeInfo['md5']
+            },
+            async removeFile(info) {
+                info.loading = true
+                let promise = removeFile(info.path)
+                await promise
+                info.loading = false
+                flush()
+            },
+            copyShort(info) {
+                writeClipboard(info.url)
+            },
+            copyLong(info) {
+                writeClipboard(document.location.origin + document.location.pathname + '/../../../..' + info.url)
+            },
+            copyMarkdown(info) {
+                writeClipboard('![' + info.name + '](' + info.url + ')')
+            },
+        }
+    })
+
+    const file_path_breadcrumb_vue = new Vue({
+        el: '#file_path_breadcrumb',
+        data: {
+            breadcrumbs: [],
+        },
+        methods: {
+            goIndex(index) {
+                if (index < 0 || this.breadcrumbs.length <= index) {
+                    this.goFolderPath('/')
+                    return
+                }
+                this.goFolderPath(this.breadcrumbs[index].path)
+            },
+            goFolderPath(path) {
+                this.breadcrumbs = []
+                const names = path.split('/')
+                let filePath = ''
+                for (let i = 0; i < names.length; i++) {
+                    if (names[i] === '') {
+                        continue
+                    }
+                    filePath = filePath + '/' + names[i]
+                    this.breadcrumbs.push({name: names[i], path: filePath})
+                }
+                file_info_table_vue.goFolderPath(path)
+            }
+        }
+    })
+
+    const file_info_table_vue = new Vue({
+        el: '#file_info_table',
+        data: {
+            fields: [
+                {key: 'name', label: 'name', sortable: true,},
+                {key: 'size', label: 'size', sortable: true,},
+                {key: 'count', label: 'count', sortable: true,},
+                {key: 'md5', label: 'md5',},
+                {key: 'url', label: 'url',},
+                {key: 'deal', label: 'deal',},
+            ],
+            folderPath: '',
+            infos: [],
+            loading: false,
+        },
+        methods: {
+            async listFolderInfo() {
+                this.loading = true
+                let promise = listFileSimpleInfo(this.folderPath)
+                let data = await promise
+                this.loading = false
+                if (data === undefined || data == null) {
+                    return
+                }
+                let infos = data.infos
+                if (infos === undefined || infos == null || infos.length === 0) {
+                    alert('当前目录没有文件')
+                    return
+                }
+                this.infos = initFileInfos(infos)
+            },
+            goFolderPath(path) {
+                this.folderPath = path
+                this.listFolderInfo()
+            },
+            openFile(info) {
+                if (info.is_file) {
+                    window.open('../../..' + info.url)
+                    return
+                }
+                this.goFolderPath(info.path)
+                file_path_breadcrumb_vue.goFolderPath(info.path)
+            },
+            async getFileCompleteInfo(info) {
+                info.loading = true
+                let promise = getFileCompleteInfo(info.path)
+                let data = await promise
+                info.loading = false
+                if (data === undefined || data == null) {
+                    return
+                }
+                const completeInfo = initFileInfo(data.info)
+                info['size'] = completeInfo['size']
+                info['count'] = completeInfo['count']
+                info['md5'] = completeInfo['md5']
+            },
+            async removeFile(info) {
+                info.loading = true
+                let promise = removeFile(info.path)
+                await promise
+                info.loading = false
+                flush()
+            },
+            copyShort(info) {
+                writeClipboard(info.url)
+            },
+            copyLong(info) {
+                writeClipboard(document.location.origin + document.location.pathname + '/../../../..' + info.url)
+            },
+            copyMarkdown(info) {
+                writeClipboard('![' + info.name + '](' + info.url + ')')
+            },
+        }
+    })
+
+    function initFileInfos(infos) {
+        if (infos === undefined || infos == null) {
+            return []
+        }
+        for (let i = 0; i < infos.length; i++) {
+            infos[i] = initFileInfo(infos[i])
+        }
+        return infos
+    }
+
+    function initFileInfo(info) {
+        if (info === undefined || info == null) {
+            return null
+        }
+        info.loading = false
+        info.url = encodeURI(info.url)
+        if (info.size !== undefined) {
+            info.size = formatFileSize(info.size)
+        }
+        return info
+    }
+
+    function createFilePath(sort, date, filename) {
+        let filePath = filename
+        if (date != null && date !== '') {
+            filePath = date + '/' + filePath
+        }
+        if (sort != null && sort !== '') {
+            filePath = sort + '/' + filePath
+        }
+        return filePath
+    }
+
+    function flush() {
+        last_file_info_table_vue.listLastFileInfo()
+        file_info_table_vue.listFolderInfo()
+    }
+
+    if (login_vue.logined()) {
+        flush()
+    }
+</script>
+</html>

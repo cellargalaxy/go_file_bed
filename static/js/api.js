@@ -35,10 +35,6 @@ async function addUrl(path, link) {
         return null
     }
 
-    if (!window.confirm("确定创建？")) {
-        return
-    }
-
     let url = '../../api/addUrl'
     if (document.domain === 'localhost') {
         url += '.json'
@@ -65,10 +61,6 @@ async function addFile(path, file) {
         return null
     }
 
-    if (!window.confirm("确定创建？")) {
-        return
-    }
-
     const param = new FormData()
     param.append("path", path)
     param.append("file", file)
@@ -92,7 +84,7 @@ async function removeFile(path) {
         return null
     }
 
-    if (!window.confirm("确定删除？")) {
+    if (!confirm("确定删除？")) {
         return
     }
 
@@ -111,7 +103,7 @@ async function removeFile(path) {
     return null
 }
 
-async function listServerConf(path) {
+async function getFileCompleteInfo(path) {
     if (path === undefined || path == null || path === '') {
         dealErr('path为空')
         return null
@@ -136,11 +128,6 @@ async function listServerConf(path) {
 }
 
 async function listFileSimpleInfo(path) {
-    if (path === undefined || path == null || path === '') {
-        dealErr('path为空')
-        return null
-    }
-
     let url = '../../api/listFileSimpleInfo'
     if (document.domain === 'localhost') {
         url += '.json'
@@ -159,43 +146,14 @@ async function listFileSimpleInfo(path) {
     return null
 }
 
-async function listFileCompleteInfo(path) {
-    if (path === undefined || path == null || path === '') {
-        dealErr('path为空')
-        return null
-    }
-
-    let url = '../../api/listFileCompleteInfo'
-    if (document.domain === 'localhost') {
-        url += '.json'
-    }
-    try {
-        let response = await instance.get(url, {
-            params: {path: path},
-            paramsSerializer: params => {
-                return Qs.stringify(params, {indices: false})
-            }
-        })
-        return dealResponse(response)
-    } catch (error) {
-        dealErr(error)
-    }
-    return null
-}
-
-async function listLastFileInfo(path) {
-    if (path === undefined || path == null || path === '') {
-        dealErr('path为空')
-        return null
-    }
-
+async function listLastFileInfo() {
     let url = '../../api/listLastFileInfo'
     if (document.domain === 'localhost') {
         url += '.json'
     }
     try {
         let response = await instance.get(url, {
-            params: {path: path},
+            params: {},
             paramsSerializer: params => {
                 return Qs.stringify(params, {indices: false})
             }
