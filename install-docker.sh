@@ -1,76 +1,61 @@
 #!/usr/bin/env bash
 
-while :
-do
-    if [ ! -z $token ];then
-        break
-    fi
-    read -s -p "please enter token(required):" token
+if [ -z $server_name ]; then
+  read -p "please enter server_name(default:go_file_bed):" server_name
+fi
+if [ -z $server_name ]; then
+  server_name="go_file_bed"
+fi
+
+while :; do
+  if [ ! -z $server_center_address ]; then
+    break
+  fi
+  read -p "please enter server_center_address(required):" server_center_address
 done
 
-if [ -z $listenPort ];then
-    read -p "please enter listen port(default:8880):" listenPort
+while :; do
+  if [ ! -z $server_center_secret ]; then
+    break
+  fi
+  read -p "please enter server_center_secret(required):" server_center_secret
+done
+
+if [ -z "$listen_port" ]; then
+  read -p "please enter listen port(default:8880):" listen_port
 fi
-if [ -z $listenPort ];then
-    listenPort="8880"
+if [ -z "$listen_port" ]; then
+  listen_port="8880"
 fi
 
-if [ -z $lastFileInfoCount ];then
-    read -p "please enter last file info count(default:10):" lastFileInfoCount
-fi
-if [ -z $lastFileInfoCount ];then
-    lastFileInfoCount="10"
-fi
-
-if [ -z $pullSyncCron ];then
-    read -p "please enter pullSyncCron(default:''):" pullSyncCron
-fi
-if [ -z $pullSyncHost ];then
-    read -p "please enter pullSyncHost(default:''):" pullSyncHost
-fi
-if [ -z $pullSyncToken ];then
-    read -p "please enter pullSyncToken(default:''):" pullSyncToken
-fi
-if [ -z $pushSyncCron ];then
-    read -p "please enter pushSyncCron(default:''):" pushSyncCron
-fi
-if [ -z $pushSyncHost ];then
-    read -p "please enter pushSyncHost(default:''):" pushSyncHost
-fi
-if [ -z $pushSyncToken ];then
-    read -p "please enter pushSyncToken(default:''):" pushSyncToken
-fi
-
-echo 'token:'$token
-echo 'listenPort:'$listenPort
-echo 'lastFileInfoCount:'$lastFileInfoCount
-echo 'pullSyncCron:'$pullSyncCron
-echo 'pullSyncHost:'$pullSyncHost
-echo 'pullSyncToken:'$pullSyncToken
-echo 'pushSyncCron:'$pushSyncCron
-echo 'pushSyncHost:'$pushSyncHost
-echo 'pushSyncToken:'$pushSyncToken
-echo 'input any key go on,or control+c over'
+echo
+echo "server_name: $server_name"
+echo "listen_port: $listen_port"
+echo "input any key go on, or control+c over"
 read
 
+echo 'create volume'
+docker volume create log
+echo 'create volume'
+docker volume create file_bed_data
+echo 'stop container'
+docker stop $server_name
+echo 'remove container'
+docker rm $server_name
+echo 'remove image'
+docker rmi $server_name
 echo 'docker build'
-docker build -t go_file_bed .
-echo 'docker create volume'
-docker volume create file_bed
+docker build -t $server_name .
 echo 'docker run'
 docker run -d \
---restart=always \
---name go_file_bed \
--p $listenPort:8880 \
--e TOKEN=$token \
--e LAST_FILE_INFO_COUNT=$lastFileInfoCount \
--e PULL_SYNC_CRON=$pullSyncCron \
--e PULL_SYNC_HOST=$pullSyncHost \
--e PULL_SYNC_TOKEN=$pullSyncToken \
--e PUSH_SYNC_CRON=$pushSyncCron \
--e PUSH_SYNC_HOST=$pushSyncHost \
--e PUSH_SYNC_TOKEN=$pushSyncToken \
--v file_bed:/file_bed \
-go_file_bed
+  --restart=always \
+  --name $server_name \
+  -v log:/log \
+  -v file_bed_data:/file_bed \
+  -p $listen_port:8880 \
+  -e server_name=$server_name \
+  -e server_center_address=$server_center_address \
+  -e server_center_secret=$server_center_secret \
+  $server_name
 
 echo 'all finish'
