@@ -13,7 +13,7 @@ import (
 var httpClient *resty.Client
 
 func init() {
-	httpClient = createHttpClient(config.Config.Timeout, 0, config.Config.Retry)
+	httpClient = createHttpClient(config.Config.Timeout, 1, config.Config.Retry)
 }
 
 func createHttpClient(timeout, sleep time.Duration, retry int) *resty.Client {
