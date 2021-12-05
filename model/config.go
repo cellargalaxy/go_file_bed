@@ -11,19 +11,15 @@ const (
 	ListenAddress = ":8880"
 	FileBedPath   = "file_bed"
 
-	FileUrl  = "/file"
-	LoginUrl = "/login"
+	FileUrl = "/file"
 
-	UploadUrlUrl             = "/admin/uploadUrl"
-	UploadFileUrl            = "/admin/uploadFile"
-	RemoveFileUrl            = "/admin/removeFile"
-	GetFileCompleteInfoUrl   = "/admin/getFileCompleteInfo"
-	ListLastFileInfoUrl      = "/admin/listLastFileInfo"
-	ListFolderInfoUrl        = "/admin/listFolderInfo"
-	ListAllFileSimpleInfoUrl = "/admin/listAllFileSimpleInfo"
-	ReceivePushSyncFileUrl   = "/admin/receivePushSyncFile"
-	PushSyncFileUrl          = "/admin/pushSyncFile"
-	PullSyncFileUrl          = "/admin/pullSyncFile"
+	AddUrlUrl               = "/admin/addUrl"
+	AddFileUrl              = "/admin/addFile"
+	RemoveFileUrl           = "/admin/removeFile"
+	GetFileCompleteInfoUrl  = "/admin/getFileCompleteInfo"
+	ListFileSimpleInfoUrl   = "/admin/listFileSimpleInfo"
+	ListFileCompleteInfoUrl = "/admin/listFileCompleteInfo"
+	ListLastFileInfoUrl     = "/admin/listLastFileInfo"
 )
 
 type Config struct {

@@ -24,6 +24,11 @@ var lastFileInfos []model.FileSimpleInfo
 var lastFileInfoLock sync.Mutex
 
 func AddUrl(ctx context.Context, filePath string, url string) (*model.FileSimpleInfo, error) {
+	if url == "" {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Error("添加链接，文件下载连接为空")
+		return nil, fmt.Errorf("添加链接，文件下载连接为空")
+	}
+
 	response, err := httpClient.R().SetContext(ctx).
 		SetHeader("User-Agent", userAgent).
 		Get(url)
@@ -88,7 +93,7 @@ func RemoveFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 }
 
 func GetFileCompleteInfo(ctx context.Context, fileOrFolderPath string) (*model.FileCompleteInfo, error) {
-	info, err := dao.GetFileCompleteInfo(ctx, fileOrFolderPath)
+	info, err := dao.SelectFileCompleteInfo(ctx, fileOrFolderPath)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +102,7 @@ func GetFileCompleteInfo(ctx context.Context, fileOrFolderPath string) (*model.F
 }
 
 func ListFileSimpleInfo(ctx context.Context, folderPath string) ([]model.FileSimpleInfo, error) {
-	infos, err := dao.ListFileSimpleInfo(ctx, folderPath)
+	infos, err := dao.SelectFolderSimpleInfo(ctx, folderPath)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +111,7 @@ func ListFileSimpleInfo(ctx context.Context, folderPath string) ([]model.FileSim
 }
 
 func ListFileCompleteInfo(ctx context.Context, folderPath string) ([]model.FileCompleteInfo, error) {
-	infos, err := dao.ListFileCompleteInfo(ctx, folderPath)
+	infos, err := dao.SelectFolderCompleteInfo(ctx, folderPath)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +119,7 @@ func ListFileCompleteInfo(ctx context.Context, folderPath string) ([]model.FileC
 	return infos, err
 }
 
-func ListLastFileInfos(ctx context.Context) ([]model.FileSimpleInfo, error) {
+func ListLastFileInfo(ctx context.Context) ([]model.FileSimpleInfo, error) {
 	return lastFileInfos, nil
 }
 

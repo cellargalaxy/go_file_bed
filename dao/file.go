@@ -7,7 +7,6 @@ import (
 	"github.com/cellargalaxy/go_file_bed/model"
 	"github.com/sirupsen/logrus"
 	"io"
-	"os"
 	"path"
 	"strings"
 )
@@ -21,7 +20,7 @@ func InsertFile(ctx context.Context, filePath string, reader io.Reader) (*model.
 	if err != nil {
 		return nil, err
 	}
-	return GetFileSimpleInfo(ctx, filePath)
+	return SelectFileSimpleInfo(ctx, filePath)
 }
 
 func DeleteFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, error) {
@@ -30,7 +29,7 @@ func DeleteFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 		return nil, err
 	}
 
-	info, err := GetFileSimpleInfo(ctx, filePath)
+	info, err := SelectFileSimpleInfo(ctx, filePath)
 	if info == nil || err != nil {
 		return info, err
 	}
@@ -44,7 +43,7 @@ func DeleteFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 	folderPath, _ := path.Split(bedPath)
 	//将`/aaa/bbb/`变为`/aaa/bbb`
 	folderPath = util.ClearPath(ctx, folderPath)
-	for {
+	for i := 0; i < 1024; i++ {
 		logrus.WithFields(logrus.Fields{"folderPath": folderPath}).Info("删除文件，删除父文件夹")
 		files, err := util.ListFile(ctx, folderPath)
 		if err != nil {
@@ -63,42 +62,10 @@ func DeleteFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 		//这里`/aaa/bbb/`依然会返回`/aaa/bbb/`
 		folderPath = path.Dir(folderPath)
 	}
+	return info, err
 }
 
-func ReadFileWithWriter(ctx context.Context, filePath string, writer io.Writer) error {
-	bedPath, err := createBedPath(ctx, filePath)
-	if err != nil {
-		return err
-	}
-	fileInfo := util.GetFileInfo(ctx, bedPath)
-	if fileInfo == nil {
-		logrus.WithFields(logrus.Fields{}).Warn("读取文件，文件不存在或者不是文件")
-		return nil
-	}
-
-	err = util.ReadFileWithWriter(ctx, bedPath, writer, nil)
-	return err
-}
-
-func GetFileInfo(ctx context.Context, filePath string) (os.FileInfo, error) {
-	bedPath, err := createBedPath(ctx, filePath)
-	if err != nil {
-		return nil, err
-	}
-	info := util.GetFileInfo(ctx, bedPath)
-	return info, nil
-}
-
-func GetFolderInfo(ctx context.Context, filePath string) (os.FileInfo, error) {
-	bedPath, err := createBedPath(ctx, filePath)
-	if err != nil {
-		return nil, err
-	}
-	info := util.GetFolderInfo(ctx, bedPath)
-	return info, nil
-}
-
-func GetFileSimpleInfo(ctx context.Context, fileOrFolderPath string) (*model.FileSimpleInfo, error) {
+func SelectFileSimpleInfo(ctx context.Context, fileOrFolderPath string) (*model.FileSimpleInfo, error) {
 	bedPath, err := createBedPath(ctx, fileOrFolderPath)
 	if err != nil {
 		return nil, err
@@ -116,7 +83,7 @@ func GetFileSimpleInfo(ctx context.Context, fileOrFolderPath string) (*model.Fil
 	return &info, nil
 }
 
-func GetFileCompleteInfo(ctx context.Context, fileOrFolderPath string) (*model.FileCompleteInfo, error) {
+func SelectFileCompleteInfo(ctx context.Context, fileOrFolderPath string) (*model.FileCompleteInfo, error) {
 	bedPath, err := createBedPath(ctx, fileOrFolderPath)
 	if err != nil {
 		return nil, err
@@ -144,7 +111,7 @@ func GetFileCompleteInfo(ctx context.Context, fileOrFolderPath string) (*model.F
 		return &info, nil
 	}
 
-	size, count, err := getFolderSizeAndCount(ctx, bedPath)
+	size, count, err := selectFolderSizeAndCount(ctx, bedPath)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +120,7 @@ func GetFileCompleteInfo(ctx context.Context, fileOrFolderPath string) (*model.F
 	return &info, nil
 }
 
-func ListFileSimpleInfo(ctx context.Context, folderPath string) ([]model.FileSimpleInfo, error) {
+func SelectFolderSimpleInfo(ctx context.Context, folderPath string) ([]model.FileSimpleInfo, error) {
 	bedPath, err := createBedPath(ctx, folderPath)
 	if err != nil {
 		return nil, err
@@ -166,7 +133,7 @@ func ListFileSimpleInfo(ctx context.Context, folderPath string) ([]model.FileSim
 
 	var infos []model.FileSimpleInfo
 	if !pathInfo.IsDir() {
-		info, err := GetFileSimpleInfo(ctx, folderPath)
+		info, err := SelectFileSimpleInfo(ctx, folderPath)
 		if info == nil || err != nil {
 			return nil, err
 		}
@@ -180,7 +147,7 @@ func ListFileSimpleInfo(ctx context.Context, folderPath string) ([]model.FileSim
 	}
 	for _, childFile := range files {
 		childFilePath := path.Join(folderPath, childFile.Name())
-		info, err := GetFileSimpleInfo(ctx, childFilePath)
+		info, err := SelectFileSimpleInfo(ctx, childFilePath)
 		if info == nil || err != nil {
 			continue
 		}
@@ -189,7 +156,7 @@ func ListFileSimpleInfo(ctx context.Context, folderPath string) ([]model.FileSim
 	return infos, nil
 }
 
-func ListFileCompleteInfo(ctx context.Context, folderPath string) ([]model.FileCompleteInfo, error) {
+func SelectFolderCompleteInfo(ctx context.Context, folderPath string) ([]model.FileCompleteInfo, error) {
 	bedPath, err := createBedPath(ctx, folderPath)
 	if err != nil {
 		return nil, err
@@ -202,7 +169,7 @@ func ListFileCompleteInfo(ctx context.Context, folderPath string) ([]model.FileC
 
 	var infos []model.FileCompleteInfo
 	if !pathInfo.IsDir() {
-		info, err := GetFileCompleteInfo(ctx, folderPath)
+		info, err := SelectFileCompleteInfo(ctx, folderPath)
 		if info == nil || err != nil {
 			return nil, err
 		}
@@ -216,7 +183,7 @@ func ListFileCompleteInfo(ctx context.Context, folderPath string) ([]model.FileC
 	}
 	for _, childFile := range files {
 		childFilePath := path.Join(folderPath, childFile.Name())
-		info, err := GetFileCompleteInfo(ctx, childFilePath)
+		info, err := SelectFileCompleteInfo(ctx, childFilePath)
 		if info == nil || err != nil {
 			continue
 		}
@@ -225,7 +192,7 @@ func ListFileCompleteInfo(ctx context.Context, folderPath string) ([]model.FileC
 	return infos, nil
 }
 
-func getFolderSizeAndCount(ctx context.Context, folderPath string) (int64, int32, error) {
+func selectFolderSizeAndCount(ctx context.Context, folderPath string) (int64, int32, error) {
 	files, err := util.ListFile(ctx, folderPath)
 	if err != nil {
 		return 0, 0, err
@@ -243,12 +210,12 @@ func getFolderSizeAndCount(ctx context.Context, folderPath string) (int64, int32
 			count += 1
 			continue
 		}
-		childSize, childCount, err := getFolderSizeAndCount(ctx, childFilePath)
+		childSize, childCount, err := selectFolderSizeAndCount(ctx, childFilePath)
 		if err != nil {
 			continue
 		}
-		size = size + childSize
-		count = count + childCount
+		size += childSize
+		count += childCount
 	}
 	return size, count, nil
 }

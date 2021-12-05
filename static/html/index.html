@@ -1,33 +1,41 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap/dist/css/bootstrap.min.css"/>
-    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css"/>
-    <title>file bed</title>
+    <title>go_file_bed</title>
+    <link type="text/css" rel="stylesheet" href="../css/bootstrap.min.css"/>
+    <link type="text/css" rel="stylesheet" href="../css/bootstrap-vue.min.css"/>
 </head>
 <body>
 <div class="container">
+    <div id="login">
+        <b-input-group size="sm">
+            <b-form-input type="password" placeholder="secret" v-model="secret"></b-form-input>
+            <b-form-input type="number" placeholder="tokenExp" v-model="tokenExp"></b-form-input>
+            <b-button size="sm" variant="outline-primary" @click="login">login</b-button>
+        </b-input-group>
+    </div>
 
-    <b-input-group id="loginForm">
-        <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
-        <b-button size="sm" variant="outline-primary" :disabled="loading" @click="login">login</b-button>
-    </b-input-group>
     <br/>
-    <form id="uploadFileForm">
-        <b-input-group>
-            <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
-            <b-form-input size="sm" type="text" placeholder="date" v-model="date" @input="input"></b-form-input>
-        </b-input-group>
-        <b-input-group>
-            <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
-            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="uploads">upload</b-button>
-        </b-input-group>
-        <b-input-group>
-            <b-form-file multiple size="sm" v-model="files" @input="input"></b-form-file>
-        </b-input-group>
-    </form>
+
+    <div id="add_file_form">
+        <form>
+            <b-input-group>
+                <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
+                <b-form-input size="sm" type="text" placeholder="date" v-model="date" @input="input"></b-form-input>
+            </b-input-group>
+            <b-input-group>
+                <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
+                <b-button size="sm" variant="outline-primary" :disabled="loading" @click="uploads">upload</b-button>
+            </b-input-group>
+            <b-input-group>
+                <b-form-file multiple size="sm" v-model="files" @input="input"></b-form-file>
+            </b-input-group>
+        </form>
+    </div>
+
     <br/>
+
     <form id="uploadUrlForm">
         <b-input-group>
             <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
@@ -44,20 +52,20 @@
     <br/>
     <b-table id="lastFileInfoTable" stacked="xl" striped hover responsive small
              :fields="fields" :items="infos" :busy="loading">
-        <template v-slot:cell(name)="data">
+        <template #cell(name)="data">
             <code>{{data.item.name}}</code>
         </template>
-        <template v-slot:cell(md5)="data">
+        <template #cell(md5)="data">
             <code>{{data.item.md5}}</code>
         </template>
-        <template v-slot:cell(url)="data">
+        <template #cell(url)="data">
             <b-button-group>
                 <b-button size="sm" variant="outline-success" @click="copyShort(data.item)">short</b-button>
                 <b-button size="sm" variant="outline-primary" @click="copyLong(data.item)">long</b-button>
                 <b-button size="sm" variant="outline-warning" @click="copyMarkdown(data.item)">markdown</b-button>
             </b-button-group>
         </template>
-        <template v-slot:cell(deal)="data">
+        <template #cell(deal)="data">
             <b-button-group>
                 <b-button size="sm" variant="outline-success" @click="openFile(data.item.path)">open</b-button>
                 <b-button size="sm" variant="outline-primary" :disabled="data.item.loading"
@@ -69,29 +77,16 @@
             </b-button-group>
         </template>
 
-        <template v-slot:table-busy>
+        <template #table-busy>
             <div class="text-center text-primary">
                 <b-spinner class="align-middle"></b-spinner>
                 <strong>Loading...</strong>
             </div>
         </template>
     </b-table>
+
     <br/>
-    <form id="pullSyncForm">
-        <b-input-group>
-            <b-form-input size="sm" type="text" placeholder="pullSyncHost" v-model="pullSyncHost"></b-form-input>
-            <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
-            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="pull">pull</b-button>
-        </b-input-group>
-    </form>
-    <form id="pushSyncForm">
-        <b-input-group>
-            <b-form-input size="sm" type="text" placeholder="pushSyncHost" v-model="pushSyncHost"></b-form-input>
-            <b-form-input size="sm" type="password" placeholder="token" v-model="token"></b-form-input>
-            <b-button size="sm" variant="outline-primary" :disabled="loading" @click="push">push</b-button>
-        </b-input-group>
-    </form>
-    <br/>
+
     <b-breadcrumb id="filePathBreadcrumb">
         <b-breadcrumb-item @click="go(-1)">
             <b-icon icon="house-fill"></b-icon>
@@ -102,20 +97,20 @@
     </b-breadcrumb>
     <b-table id="fileInfoTable" stacked="xl" striped hover responsive small
              :fields="fields" :items="infos" :busy="loading">
-        <template v-slot:cell(name)="data">
+        <template #cell(name)="data">
             <code>{{data.item.name}}</code>
         </template>
-        <template v-slot:cell(md5)="data">
+        <template #cell(md5)="data">
             <code>{{data.item.md5}}</code>
         </template>
-        <template v-slot:cell(url)="data">
+        <template #cell(url)="data">
             <b-button-group v-if="data.item.isFile">
                 <b-button size="sm" variant="outline-success" @click="copyShort(data.item)">short</b-button>
                 <b-button size="sm" variant="outline-primary" @click="copyLong(data.item)">long</b-button>
                 <b-button size="sm" variant="outline-warning" @click="copyMarkdown(data.item)">markdown</b-button>
             </b-button-group>
         </template>
-        <template v-slot:cell(deal)="data">
+        <template #cell(deal)="data">
             <b-button-group>
                 <b-button size="sm" variant="outline-success" @click="openFile(data.item.path)">open</b-button>
                 <b-button size="sm" variant="outline-primary" :disabled="data.item.loading"
@@ -127,7 +122,7 @@
             </b-button-group>
         </template>
 
-        <template v-slot:table-busy>
+        <template #table-busy>
             <div class="text-center text-primary">
                 <b-spinner class="align-middle"></b-spinner>
                 <strong>Loading...</strong>
@@ -138,58 +133,51 @@
 
 </div>
 </body>
-<script src="//vuejs.org/js/vue.min.js"></script>
-<script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
-<script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/qs/6.9.3/qs.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"></script>
+<script src="../js/vue.min.js"></script>
+<script src="../js/bootstrap-vue.min.js"></script>
+<script src="../js/bootstrap-vue-icons.min.js"></script>
+<script src="../js/qs.min.js"></script>
+<script src="../js/axios.min.js"></script>
+
+<!-- 关于crypto-js的导入与使用：https://www.jianshu.com/p/90540249747d，https://github.com/kjur/jsrsasign/issues/232，https://stackoverflow.com/questions/57416217/cryptojs-encrypt-in-aes-256-cbc-returns-an-unexpected-value -->
+<script src="../js/core.min.js"></script>
+<script src="../js/enc-base64.min.js"></script>
+<script src="../js/md5.min.js"></script>
+<script src="../js/evpkdf.min.js"></script>
+<script src="../js/jsrsasign-all-min.min.js"></script>
+
+<script src="../js/util.js"></script>
+<script src="../js/api.js"></script>
+
 <script>
     window.onbeforeunload = (event) => 'maybe some data not save'
-    var instance = axios.create({timeout: 60 * 60 * 1000})
 
-    const loginFormVue = new Vue({
-        el: '#loginForm',
+    let login_vue = new Vue({
+        el: '#login',
         data: {
-            token: null,
-            loading: false
+            secret: '',
+            tokenExp: 3,
         },
         methods: {
-            login() {
-                if (this.token == null || this.token === '') {
-                    alert('token为空')
-                    return
+            async login() {
+                setSecret(this.secret)
+                setTokenExp(this.tokenExp)
+                let promise = ping()
+                let data = await promise
+                if (data !== null) {
+                    alert('登录成功: ' + JSON.stringify(data))
                 }
-                this.loading = true
-                instance.post("login", Qs.stringify({token: this.token}))
-                    .then(response => {
-                        this.loading = false
-                        const result = response.data
-                        alert(result.code === 1 ? '登录成功' : '登录失败')
-                        if (result.code === 1) {
-                            this.init()
-                            this.setLogin()
-                            flush()
-                        }
-                    })
-                    .catch(error => {
-                        this.loading = false
-                        alert("error: " + JSON.stringify(error))
-                    })
             },
-            setLogin() {
-                setCookie('login', 'login')
+            async logined() {
+                let promise = ping()
+                let data = await promise
+                return data !== null
             },
-            getLogin() {
-                return getCookie('login') === 'login'
-            },
-            init() {
-                this.token = null
-            }
-        }
+        },
     })
 
-    const uploadFileVue = new Vue({
-        el: '#uploadFileForm',
+    const add_file_form_vue = new Vue({
+        el: '#add_file_form',
         data: {
             files: [],
             sort: '',
@@ -436,78 +424,6 @@
         }
     })
 
-    const pullSyncVue = new Vue({
-        el: '#pullSyncForm',
-        data: {
-            pullSyncHost: null,
-            token: null,
-            loading: false
-        },
-        methods: {
-            pull() {
-                if (this.pullSyncHost == null || this.pullSyncHost === '' || this.token == null || this.token === '') {
-                    alert('pull同步URL或者token为空')
-                    return
-                }
-                this.loading = true
-                instance.post("admin/pullSyncFile", Qs.stringify({pullSyncHost: this.pullSyncHost, token: this.token}))
-                    .then(response => {
-                        this.loading = false
-                        const result = response.data
-                        alert('失败数量: ' + result.data + ', 失败原因: ' + result.message)
-                        if (result.code === 1) {
-                            this.init()
-                            flush()
-                        }
-                    })
-                    .catch(error => {
-                        this.loading = false
-                        alert("error: " + JSON.stringify(error))
-                    })
-            },
-            init() {
-                this.pullSyncHost = null
-                this.token = null
-            }
-        }
-    })
-
-    const pushSyncVue = new Vue({
-        el: '#pushSyncForm',
-        data: {
-            pushSyncHost: null,
-            token: null,
-            loading: false
-        },
-        methods: {
-            push() {
-                if (this.pushSyncHost == null || this.pushSyncHost === '' || this.token == null || this.token === '') {
-                    alert('push同步URL或者token为空')
-                    return
-                }
-                this.loading = true
-                instance.post("admin/pushSyncFile", Qs.stringify({pushSyncHost: this.pushSyncHost, token: this.token}))
-                    .then(response => {
-                        this.loading = false
-                        const result = response.data
-                        alert('失败数量: ' + result.data + ', 失败原因: ' + result.message)
-                        if (result.code === 1) {
-                            this.init()
-                            flush()
-                        }
-                    })
-                    .catch(error => {
-                        this.loading = false
-                        alert("error: " + JSON.stringify(error))
-                    })
-            },
-            init() {
-                this.pushSyncHost = null
-                this.token = null
-            }
-        }
-    })
-
     const filePathVue = new Vue({
         el: '#filePathBreadcrumb',
         data: {
@@ -715,27 +631,9 @@
         return info
     }
 
-    function writeClipboard(text) {
-        const textarea = document.createElement('textarea')
-        textarea.style.opacity = 0
-        textarea.style.position = 'absolute'
-        textarea.style.left = '-100000px'
-        document.body.appendChild(textarea)
 
-        textarea.value = text
-        textarea.select()
-        textarea.setSelectionRange(0, text.length)
-        document.execCommand('copy')
-        document.body.removeChild(textarea)
-    }
 
-    function formatFileSize(size) {
-        if (size < 0) return '非法大小: ' + size
-        if (size === 0) return '0B'
-        var s = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-        var e = Math.floor(Math.log(size) / Math.log(1024))
-        return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + '' + s[e]
-    }
+
 
     function createFilePath(sort, date, filename) {
         let filePath = filename
@@ -748,50 +646,9 @@
         return filePath
     }
 
-    function formatDate(date, fmt) {
-        let o = {
-            'M+': date.getMonth() + 1, //月份
-            'D+': date.getDate(), //日
-            'H+': date.getHours(), //小时
-            'm+': date.getMinutes(), //分
-            's+': date.getSeconds(), //秒
-            'q+': Math.floor((date.getMonth() + 3) / 3), //季度
-            'S': date.getMilliseconds() //毫秒
-        }
-        if (/(Y+)/.test(fmt)) {
-            fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length))
-        }
-        for (let k in o) {
-            if (new RegExp('(' + k + ')').test(fmt)) {
-                fmt = fmt.replace(RegExp.$1, (RegExp.$1.length === 1) ? (o[k]) : (('00' + o[k]).substr(('' + o[k]).length)))
-            }
-        }
-        return fmt
-    }
 
-    function getCookieFromString(cookieString, name) {
-        if (cookieString === null) {
-            return null
-        }
-        let nameEQ = name + '='
-        let ca = cookieString.split(';')
-        for (let i = 0; i < ca.length; i++) {
-            let c = ca[i]
-            while (c.charAt(0) === ' ') c = c.substring(1, c.length)
-            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
-        }
-        return null
-    }
 
-    function getCookie(name) {
-        return getCookieFromString(document.cookie, name)
-    }
 
-    function setCookie(key, value) {
-        let date = new Date()
-        date.setTime(date.getTime() + (1000 * 60 * 60))
-        document.cookie = key + '=' + value + '; expires=' + date.toGMTString()
-    }
 
     function endsWith(string, end) {
         return string.substring(string.length - end.length) === end
