@@ -12,4 +12,5 @@ RUN echo -e "https://mirrors.ustc.edu.cn/alpine/latest-stable/main\nhttps://mirr
 RUN apk --no-cache add ca-certificates
 RUN apk add tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && apk del tzdata
 VOLUME /log
+VOLUME /file_bed
 CMD ["/go_file_bed"]
