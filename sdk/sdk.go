@@ -41,7 +41,7 @@ func NewDefaultFileBedClient(address, secret string) (*FileBedClient, error) {
 
 func NewFileBedClient(timeout, sleep time.Duration, retry int, handler model.FileBedHandlerInter) (*FileBedClient, error) {
 	if handler == nil {
-		return nil, fmt.Errorf("MsgHandlerInter为空")
+		return nil, fmt.Errorf("FileBedHandlerInter为空")
 	}
 	httpClient := createHttpClient(timeout, sleep, retry)
 	return &FileBedClient{retry: retry, handler: handler, httpClient: httpClient}, nil
