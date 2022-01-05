@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/cellargalaxy/go_common/consd"
 	common_model "github.com/cellargalaxy/go_common/model"
 	"github.com/cellargalaxy/go_common/util"
 	"github.com/cellargalaxy/go_file_bed/model"
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
+	"io"
 	"net/http"
 	"time"
 )
@@ -36,7 +38,7 @@ type FileBedClient struct {
 }
 
 func NewDefaultFileBedClient(address, secret string) (*FileBedClient, error) {
-	return NewFileBedClient(3*time.Second, 3*time.Second, 3, &FileBedHandler{Address: address, Secret: secret})
+	return NewFileBedClient(time.Minute, 3*time.Second, 3, &FileBedHandler{Address: address, Secret: secret})
 }
 
 func NewFileBedClient(timeout, sleep time.Duration, retry int, handler model.FileBedHandlerInter) (*FileBedClient, error) {
@@ -92,19 +94,18 @@ func createHttpClient(timeout, sleep time.Duration, retry int) *resty.Client {
 	return httpClient
 }
 
-//发送微信通用模板信息
-func (this FileBedClient) SendTemplateToCommonTag(ctx context.Context, text string) (bool, error) {
+func (this FileBedClient) AddFile(ctx context.Context, filePath string, reader io.Reader) (*model.FileAddResponse, error) {
 	var jsonString string
-	var object bool
+	var object *model.FileAddResponse
 	var err error
 	for i := 0; i < this.retry; i++ {
 		jwtToken, err := this.genJWT(ctx)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
-		jsonString, err = this.requestSendTemplateToCommonTag(ctx, jwtToken, text)
+		jsonString, err = this.requestAddFile(ctx, jwtToken, filePath, reader)
 		if err == nil {
-			object, err = this.analysisSendTemplateToCommonTag(ctx, jsonString)
+			object, err = this.parseAddFile(ctx, jsonString)
 			if err == nil {
 				return object, err
 			}
@@ -113,36 +114,177 @@ func (this FileBedClient) SendTemplateToCommonTag(ctx context.Context, text stri
 	return object, err
 }
 
-//发送微信通用模板信息
-func (this FileBedClient) analysisSendTemplateToCommonTag(ctx context.Context, jsonString string) (bool, error) {
-	return this.analysisSendWxTemplateToTag(ctx, jsonString)
+func (this FileBedClient) parseAddFile(ctx context.Context, jsonString string) (*model.FileAddResponse, error) {
+	type Response struct {
+		Code int                   `json:"code"`
+		Msg  string                `json:"msg"`
+		Data model.FileAddResponse `json:"data"`
+	}
+	var response Response
+	err := util.UnmarshalJsonString(jsonString, &response)
+	if err != nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加文件，解析响应异常")
+		return nil, fmt.Errorf("添加文件，解析响应异常")
+	}
+	if response.Code != consd.HttpSuccessCode {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"code": response.Code, "msg": response.Msg}).Error("添加文件，失败")
+		return nil, fmt.Errorf("添加文件，失败")
+	}
+	return &response.Data, nil
 }
 
-//发送微信通用模板信息
-func (this FileBedClient) requestSendTemplateToCommonTag(ctx context.Context, jwtToken string, text string) (string, error) {
+func (this FileBedClient) requestAddFile(ctx context.Context, jwtToken string, filePath string, reader io.Reader) (string, error) {
 	response, err := this.httpClient.R().SetContext(ctx).
-		SetHeader("Content-Type", "application/json;CHARSET=utf-8").
 		SetHeader("Authorization", "Bearer "+jwtToken).
 		SetHeader(util.LogIdKey, fmt.Sprint(util.GetLogId(ctx))).
-		SetBody(map[string]interface{}{
-			"text": text,
+		SetFileReader("file", filePath, reader).
+		SetFormData(map[string]string{
+			"path": filePath,
 		}).
-		Post(this.handler.GetAddress(ctx) + "/api/sendTemplateToCommonTag")
+		Post(this.handler.GetAddress(ctx) + model.AddFileUrl)
 
 	if err != nil {
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("发送微信通用模板信息，请求异常")
-		return "", fmt.Errorf("发送微信通用模板信息，请求异常")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加文件，请求异常")
+		return "", fmt.Errorf("添加文件，请求异常")
 	}
 	if response == nil {
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("发送微信通用模板信息，响应为空")
-		return "", fmt.Errorf("发送微信通用模板信息，响应为空")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加文件，响应为空")
+		return "", fmt.Errorf("添加文件，响应为空")
 	}
 	statusCode := response.StatusCode()
 	body := response.String()
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"statusCode": statusCode, "body": body}).Info("发送微信通用模板信息，响应")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"statusCode": statusCode, "body": body}).Info("添加文件，响应")
 	if statusCode != http.StatusOK {
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"StatusCode": statusCode}).Error("发送微信通用模板信息，响应码失败")
-		return "", fmt.Errorf("发送微信通用模板信息，响应码失败: %+v", statusCode)
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"StatusCode": statusCode}).Error("添加文件，响应码失败")
+		return "", fmt.Errorf("添加文件，响应码失败: %+v", statusCode)
+	}
+	return body, nil
+}
+
+func (this FileBedClient) GetFileCompleteInfo(ctx context.Context, request model.FileCompleteInfoGetRequest) (*model.FileCompleteInfoGetResponse, error) {
+	var jsonString string
+	var object *model.FileCompleteInfoGetResponse
+	var err error
+	for i := 0; i < this.retry; i++ {
+		jwtToken, err := this.genJWT(ctx)
+		if err != nil {
+			return nil, err
+		}
+		jsonString, err = this.requestGetFileCompleteInfo(ctx, jwtToken, request)
+		if err == nil {
+			object, err = this.parseGetFileCompleteInfo(ctx, jsonString)
+			if err == nil {
+				return object, err
+			}
+		}
+	}
+	return object, err
+}
+
+func (this FileBedClient) parseGetFileCompleteInfo(ctx context.Context, jsonString string) (*model.FileCompleteInfoGetResponse, error) {
+	type Response struct {
+		Code int                               `json:"code"`
+		Msg  string                            `json:"msg"`
+		Data model.FileCompleteInfoGetResponse `json:"data"`
+	}
+	var response Response
+	err := util.UnmarshalJsonString(jsonString, &response)
+	if err != nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件完整信息，解析响应异常")
+		return nil, fmt.Errorf("查询文件完整信息，解析响应异常")
+	}
+	if response.Code != consd.HttpSuccessCode {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"code": response.Code, "msg": response.Msg}).Error("查询文件完整信息，失败")
+		return nil, fmt.Errorf("查询文件完整信息，失败")
+	}
+	return &response.Data, nil
+}
+
+func (this FileBedClient) requestGetFileCompleteInfo(ctx context.Context, jwtToken string, request model.FileCompleteInfoGetRequest) (string, error) {
+	response, err := this.httpClient.R().SetContext(ctx).
+		SetHeader("Authorization", "Bearer "+jwtToken).
+		SetHeader(util.LogIdKey, fmt.Sprint(util.GetLogId(ctx))).
+		SetQueryParam("path", request.Path).
+		Get(this.handler.GetAddress(ctx) + model.GetFileCompleteInfoUrl)
+
+	if err != nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件完整信息，请求异常")
+		return "", fmt.Errorf("查询文件完整信息，请求异常")
+	}
+	if response == nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件完整信息，响应为空")
+		return "", fmt.Errorf("查询文件完整信息，响应为空")
+	}
+	statusCode := response.StatusCode()
+	body := response.String()
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"statusCode": statusCode, "body": body}).Info("查询文件完整信息，响应")
+	if statusCode != http.StatusOK {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"StatusCode": statusCode}).Error("查询文件完整信息，响应码失败")
+		return "", fmt.Errorf("查询文件完整信息，响应码失败: %+v", statusCode)
+	}
+	return body, nil
+}
+
+func (this FileBedClient) ListFileSimpleInfo(ctx context.Context, request model.FileSimpleInfoListRequest) (*model.FileSimpleInfoListResponse, error) {
+	var jsonString string
+	var object *model.FileSimpleInfoListResponse
+	var err error
+	for i := 0; i < this.retry; i++ {
+		jwtToken, err := this.genJWT(ctx)
+		if err != nil {
+			return nil, err
+		}
+		jsonString, err = this.requestListFileSimpleInfo(ctx, jwtToken, request)
+		if err == nil {
+			object, err = this.parseListFileSimpleInfo(ctx, jsonString)
+			if err == nil {
+				return object, err
+			}
+		}
+	}
+	return object, err
+}
+
+func (this FileBedClient) parseListFileSimpleInfo(ctx context.Context, jsonString string) (*model.FileSimpleInfoListResponse, error) {
+	type Response struct {
+		Code int                              `json:"code"`
+		Msg  string                           `json:"msg"`
+		Data model.FileSimpleInfoListResponse `json:"data"`
+	}
+	var response Response
+	err := util.UnmarshalJsonString(jsonString, &response)
+	if err != nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件简单信息，解析响应异常")
+		return nil, fmt.Errorf("查询文件简单信息，解析响应异常")
+	}
+	if response.Code != consd.HttpSuccessCode {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"code": response.Code, "msg": response.Msg}).Error("查询文件简单信息，失败")
+		return nil, fmt.Errorf("查询文件简单信息，失败")
+	}
+	return &response.Data, nil
+}
+
+func (this FileBedClient) requestListFileSimpleInfo(ctx context.Context, jwtToken string, request model.FileSimpleInfoListRequest) (string, error) {
+	response, err := this.httpClient.R().SetContext(ctx).
+		SetHeader("Authorization", "Bearer "+jwtToken).
+		SetHeader(util.LogIdKey, fmt.Sprint(util.GetLogId(ctx))).
+		SetQueryParam("path", request.Path).
+		Get(this.handler.GetAddress(ctx) + model.ListFileSimpleInfoUrl)
+
+	if err != nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件简单信息，请求异常")
+		return "", fmt.Errorf("查询文件简单信息，请求异常")
+	}
+	if response == nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件简单信息，响应为空")
+		return "", fmt.Errorf("查询文件简单信息，响应为空")
+	}
+	statusCode := response.StatusCode()
+	body := response.String()
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"statusCode": statusCode, "body": body}).Info("查询文件简单信息，响应")
+	if statusCode != http.StatusOK {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"StatusCode": statusCode}).Error("查询文件简单信息，响应码失败")
+		return "", fmt.Errorf("查询文件简单信息，响应码失败: %+v", statusCode)
 	}
 	return body, nil
 }
@@ -151,7 +293,7 @@ func (this FileBedClient) genJWT(ctx context.Context) (string, error) {
 	now := time.Now()
 	var claims common_model.Claims
 	claims.IssuedAt = now.Unix()
-	claims.ExpiresAt = now.Unix() + int64(this.retry*3)
+	claims.ExpiresAt = now.Unix() + int64(this.retry*60)
 	claims.RequestId = fmt.Sprint(util.GenId())
 	jwtToken, err := util.GenJWT(ctx, this.handler.GetSecret(ctx), claims)
 	return jwtToken, err

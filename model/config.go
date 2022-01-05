@@ -13,13 +13,12 @@ const (
 
 	FileUrl = "/file"
 
-	AddUrlUrl               = "/api/addUrl"
-	AddFileUrl              = "/api/addFile"
-	RemoveFileUrl           = "/api/removeFile"
-	GetFileCompleteInfoUrl  = "/api/getFileCompleteInfo"
-	ListFileSimpleInfoUrl   = "/api/listFileSimpleInfo"
-	ListFileCompleteInfoUrl = "/api/listFileCompleteInfo"
-	ListLastFileInfoUrl     = "/api/listLastFileInfo"
+	AddUrlUrl              = "/api/addUrl"
+	AddFileUrl             = "/api/addFile"
+	RemoveFileUrl          = "/api/removeFile"
+	GetFileCompleteInfoUrl = "/api/getFileCompleteInfo"
+	ListFileSimpleInfoUrl  = "/api/listFileSimpleInfo"
+	ListLastFileInfoUrl    = "/api/listLastFileInfo"
 )
 
 type Config struct {

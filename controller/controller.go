@@ -27,7 +27,6 @@ func Controller() error {
 	engine.POST(model.RemoveFileUrl, validate, removeFile)
 	engine.GET(model.GetFileCompleteInfoUrl, validate, getFileCompleteInfo)
 	engine.GET(model.ListFileSimpleInfoUrl, validate, listFileSimpleInfo)
-	engine.GET(model.ListFileCompleteInfoUrl, validate, listFileCompleteInfo)
 	engine.GET(model.ListLastFileInfoUrl, validate, listLastFileInfo)
 
 	err := engine.Run(model.ListenAddress)
