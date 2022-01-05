@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/cellargalaxy/go_common/util"
 	"github.com/cellargalaxy/go_file_bed/dao"
 	"github.com/cellargalaxy/go_file_bed/model"
@@ -9,6 +10,33 @@ import (
 	"github.com/sirupsen/logrus"
 	"path"
 )
+
+func PushSyncFile(ctx context.Context, address, secret, path string) error {
+	client, err := NewFileSyncClient(address, secret)
+	if err != nil {
+		return err
+	}
+	return client.Push(ctx, path, path)
+}
+
+func PullSyncFile(ctx context.Context, address, secret, path string) error {
+	client, err := NewFileSyncClient(address, secret)
+	if err != nil {
+		return err
+	}
+	return client.Pull(ctx, path, path)
+}
+
+func NewFileSyncClient(address, secret string) (model.FileSyncInter, error) {
+	client, err := sdk.NewDefaultFileBedClient(address, secret)
+	if err != nil {
+		return nil, err
+	}
+	if client == nil {
+		return nil, fmt.Errorf("创建FileBedClient为空")
+	}
+	return FileSyncClient{client: *client}, nil
+}
 
 type FileSyncClient struct {
 	client sdk.FileBedClient
