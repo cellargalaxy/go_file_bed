@@ -71,18 +71,6 @@ func listFileSimpleInfo(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, util.CreateResponse(controller.ListFileSimpleInfo(ctx, request)))
 }
 
-func listFileCompleteInfo(ctx *gin.Context) {
-	var request model.FileCompleteInfoListRequest
-	err := ctx.Bind(&request)
-	if err != nil {
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件完整信息，请求参数解析异常")
-		ctx.JSON(http.StatusOK, util.CreateErrResponse(err.Error()))
-		return
-	}
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"request": request}).Info("查询文件完整信息")
-	ctx.JSON(http.StatusOK, util.CreateResponse(controller.ListFileCompleteInfo(ctx, request)))
-}
-
 func listLastFileInfo(ctx *gin.Context) {
 	var request model.LastFileInfoListRequest
 	err := ctx.Bind(&request)

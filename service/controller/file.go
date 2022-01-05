@@ -8,26 +8,22 @@ import (
 )
 
 func AddUrl(ctx context.Context, request model.UrlAddRequest) (*model.UrlAddResponse, error) {
-	object, err := service.AddUrl(ctx, request.Path, request.Url)
+	object, err := service.AddUrl(ctx, request.Path, request.Url, true)
 	if err != nil {
 		return nil, err
 	}
 	var response model.UrlAddResponse
-	if object != nil {
-		response.Info = *object
-	}
+	response.Info = object
 	return &response, nil
 }
 
 func AddFile(ctx context.Context, filePath string, reader io.Reader) (*model.FileAddResponse, error) {
-	object, err := service.AddFile(ctx, filePath, reader)
+	object, err := service.AddFile(ctx, filePath, reader, true)
 	if err != nil {
 		return nil, err
 	}
 	var response model.FileAddResponse
-	if object != nil {
-		response.Info = *object
-	}
+	response.Info = object
 	return &response, nil
 }
 
@@ -37,9 +33,7 @@ func RemoveFile(ctx context.Context, request model.FileRemoveRequest) (*model.Fi
 		return nil, err
 	}
 	var response model.FileRemoveResponse
-	if object != nil {
-		response.Info = *object
-	}
+	response.Info = object
 	return &response, nil
 }
 
@@ -49,9 +43,7 @@ func GetFileCompleteInfo(ctx context.Context, request model.FileCompleteInfoGetR
 		return nil, err
 	}
 	var response model.FileCompleteInfoGetResponse
-	if object != nil {
-		response.Info = *object
-	}
+	response.Info = object
 	return &response, nil
 }
 
@@ -61,16 +53,6 @@ func ListFileSimpleInfo(ctx context.Context, request model.FileSimpleInfoListReq
 		return nil, err
 	}
 	var response model.FileSimpleInfoListResponse
-	response.Infos = object
-	return &response, nil
-}
-
-func ListFileCompleteInfo(ctx context.Context, request model.FileCompleteInfoListRequest) (*model.FileCompleteInfoListResponse, error) {
-	object, err := service.ListFileCompleteInfo(ctx, request.Path)
-	if err != nil {
-		return nil, err
-	}
-	var response model.FileCompleteInfoListResponse
 	response.Infos = object
 	return &response, nil
 }

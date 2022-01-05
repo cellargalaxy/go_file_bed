@@ -94,7 +94,48 @@ func createHttpClient(timeout, sleep time.Duration, retry int) *resty.Client {
 	return httpClient
 }
 
-func (this FileBedClient) AddFile(ctx context.Context, filePath string, reader io.Reader) (*model.FileAddResponse, error) {
+func (this FileBedClient) DownloadFile(ctx context.Context, filePath string, writer io.Writer) error {
+	url, err := this.GetFileDownloadUrl(ctx, filePath)
+	if err != nil {
+		return err
+	}
+
+	response, err := this.httpClient.R().SetContext(ctx).
+		SetDoNotParseResponse(true).
+		Get(url)
+
+	if err != nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("下载文件，文件下载异常")
+		return fmt.Errorf("下载文件，文件下载异常")
+	}
+	if response == nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("下载文件，文件下载响应为空")
+		return fmt.Errorf("下载文件，文件下载响应为空")
+	}
+	statusCode := response.StatusCode()
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"statusCode": statusCode}).Info("下载文件，文件下载响应")
+	if statusCode != http.StatusOK {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"StatusCode": statusCode}).Error("下载文件，文件下载响应码失败")
+		return fmt.Errorf("下载文件，文件下载响应码失败: %+v", statusCode)
+	}
+
+	written, err := io.Copy(writer, response.RawBody())
+	if err != nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"filePath": filePath, "err": err}).Error("下载文件，拷贝数据异常")
+		return fmt.Errorf("下载文件，拷贝数据异常: %+v", err)
+	} else {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"filePath": filePath, "written": written}).Info("下载文件，拷贝数据完成")
+	}
+	return nil
+}
+
+func (this FileBedClient) GetFileDownloadUrl(ctx context.Context, filePath string) (string, error) {
+	url := this.handler.GetAddress(ctx) + filePath
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"url": url}).Info("获取下载文件链接")
+	return url, nil
+}
+
+func (this FileBedClient) AddFile(ctx context.Context, filePath string, reader io.Reader) (*model.FileSimpleInfo, error) {
 	var jsonString string
 	var object *model.FileAddResponse
 	var err error
@@ -106,12 +147,12 @@ func (this FileBedClient) AddFile(ctx context.Context, filePath string, reader i
 		jsonString, err = this.requestAddFile(ctx, jwtToken, filePath, reader)
 		if err == nil {
 			object, err = this.parseAddFile(ctx, jsonString)
-			if err == nil {
-				return object, err
+			if object != nil && err == nil {
+				return object.Info, err
 			}
 		}
 	}
-	return object, err
+	return nil, err
 }
 
 func (this FileBedClient) parseAddFile(ctx context.Context, jsonString string) (*model.FileAddResponse, error) {
@@ -161,7 +202,7 @@ func (this FileBedClient) requestAddFile(ctx context.Context, jwtToken string, f
 	return body, nil
 }
 
-func (this FileBedClient) GetFileCompleteInfo(ctx context.Context, request model.FileCompleteInfoGetRequest) (*model.FileCompleteInfoGetResponse, error) {
+func (this FileBedClient) GetFileCompleteInfo(ctx context.Context, request model.FileCompleteInfoGetRequest) (*model.FileCompleteInfo, error) {
 	var jsonString string
 	var object *model.FileCompleteInfoGetResponse
 	var err error
@@ -173,12 +214,12 @@ func (this FileBedClient) GetFileCompleteInfo(ctx context.Context, request model
 		jsonString, err = this.requestGetFileCompleteInfo(ctx, jwtToken, request)
 		if err == nil {
 			object, err = this.parseGetFileCompleteInfo(ctx, jsonString)
-			if err == nil {
-				return object, err
+			if object != nil && err == nil {
+				return object.Info, err
 			}
 		}
 	}
-	return object, err
+	return nil, err
 }
 
 func (this FileBedClient) parseGetFileCompleteInfo(ctx context.Context, jsonString string) (*model.FileCompleteInfoGetResponse, error) {
@@ -225,7 +266,7 @@ func (this FileBedClient) requestGetFileCompleteInfo(ctx context.Context, jwtTok
 	return body, nil
 }
 
-func (this FileBedClient) ListFileSimpleInfo(ctx context.Context, request model.FileSimpleInfoListRequest) (*model.FileSimpleInfoListResponse, error) {
+func (this FileBedClient) ListFileSimpleInfo(ctx context.Context, request model.FileSimpleInfoListRequest) ([]model.FileSimpleInfo, error) {
 	var jsonString string
 	var object *model.FileSimpleInfoListResponse
 	var err error
@@ -237,12 +278,12 @@ func (this FileBedClient) ListFileSimpleInfo(ctx context.Context, request model.
 		jsonString, err = this.requestListFileSimpleInfo(ctx, jwtToken, request)
 		if err == nil {
 			object, err = this.parseListFileSimpleInfo(ctx, jsonString)
-			if err == nil {
-				return object, err
+			if object != nil && err == nil {
+				return object.Infos, err
 			}
 		}
 	}
-	return object, err
+	return nil, err
 }
 
 func (this FileBedClient) parseListFileSimpleInfo(ctx context.Context, jsonString string) (*model.FileSimpleInfoListResponse, error) {

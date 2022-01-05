@@ -7,6 +7,7 @@ import (
 	"github.com/cellargalaxy/go_file_bed/model"
 	"github.com/sirupsen/logrus"
 	"io"
+	"os"
 	"path"
 	"strings"
 )
@@ -218,6 +219,14 @@ func selectFolderSizeAndCount(ctx context.Context, folderPath string) (int64, in
 		count += childCount
 	}
 	return size, count, nil
+}
+
+func GetReadFile(ctx context.Context, filePath string) (*os.File, error) {
+	bedPath, err := createBedPath(ctx, filePath)
+	if err != nil {
+		return nil, err
+	}
+	return util.GetReadFile(ctx, bedPath)
 }
 
 func createBedPath(ctx context.Context, fileOrFolderPath string) (string, error) {

@@ -26,7 +26,7 @@ func (this UrlAddRequest) String() string {
 }
 
 type UrlAddResponse struct {
-	Info FileSimpleInfo `json:"info"`
+	Info *FileSimpleInfo `json:"info"`
 }
 
 func (this UrlAddResponse) String() string {
@@ -34,7 +34,7 @@ func (this UrlAddResponse) String() string {
 }
 
 type FileAddResponse struct {
-	Info FileSimpleInfo `json:"info"`
+	Info *FileSimpleInfo `json:"info"`
 }
 
 func (this FileAddResponse) String() string {
@@ -50,7 +50,7 @@ func (this FileRemoveRequest) String() string {
 }
 
 type FileRemoveResponse struct {
-	Info FileSimpleInfo `json:"info"`
+	Info *FileSimpleInfo `json:"info"`
 }
 
 func (this FileRemoveResponse) String() string {
@@ -66,7 +66,7 @@ func (this FileCompleteInfoGetRequest) String() string {
 }
 
 type FileCompleteInfoGetResponse struct {
-	Info FileCompleteInfo `json:"info"`
+	Info *FileCompleteInfo `json:"info"`
 }
 
 func (this FileCompleteInfoGetResponse) String() string {
@@ -86,22 +86,6 @@ type FileSimpleInfoListResponse struct {
 }
 
 func (this FileSimpleInfoListResponse) String() string {
-	return util.ToJsonString(this)
-}
-
-type FileCompleteInfoListRequest struct {
-	Path string `json:"path" form:"path" query:"path"`
-}
-
-func (this FileCompleteInfoListRequest) String() string {
-	return util.ToJsonString(this)
-}
-
-type FileCompleteInfoListResponse struct {
-	Infos []FileCompleteInfo `json:"infos"`
-}
-
-func (this FileCompleteInfoListResponse) String() string {
 	return util.ToJsonString(this)
 }
 
