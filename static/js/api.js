@@ -25,7 +25,7 @@ async function ping() {
     return null
 }
 
-async function addUrl(path, link) {
+async function addUrl(path, link, raw) {
     if (path === undefined || path == null || path === '') {
         dealErr('path为空')
         return null
@@ -42,6 +42,7 @@ async function addUrl(path, link) {
     try {
         let response = await instance.post(url, {
             path: path,
+            raw: raw,
             url: link,
         })
         return dealResponse(response)
@@ -51,7 +52,7 @@ async function addUrl(path, link) {
     return null
 }
 
-async function addFile(path, file) {
+async function addFile(path, file, raw) {
     if (path === undefined || path == null || path === '') {
         dealErr('path为空')
         return null
@@ -63,6 +64,7 @@ async function addFile(path, file) {
 
     const param = new FormData()
     param.append("path", path)
+    param.append("raw", raw)
     param.append("file", file)
 
     let url = '../../api/addFile'

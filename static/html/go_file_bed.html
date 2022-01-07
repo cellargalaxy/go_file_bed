@@ -19,14 +19,17 @@
     <br/>
 
     <form id="add_file_form">
-        <b-input-group>
+        <b-input-group size="sm">
             <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
             <b-form-input size="sm" type="text" placeholder="date" v-model="date" @input="input"></b-form-input>
+            <b-input-group-append is-text>
+                <b-form-checkbox switch class="mr-n2 mb-n1" size="sm" v-model="raw" value="true">raw</b-form-checkbox>
+            </b-input-group-append>
         </b-input-group>
-        <b-input-group>
+        <b-input-group size="sm">
             <b-form-file multiple size="sm" v-model="files" @input="input"></b-form-file>
         </b-input-group>
-        <b-input-group>
+        <b-input-group size="sm">
             <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
             <b-button size="sm" variant="outline-primary" :disabled="loading" @click="upload">upload</b-button>
         </b-input-group>
@@ -35,14 +38,17 @@
     <br/>
 
     <form id="add_url_form">
-        <b-input-group>
+        <b-input-group size="sm">
             <b-form-input size="sm" type="text" placeholder="sort" v-model="sort" @input="input"></b-form-input>
             <b-form-input size="sm" type="text" placeholder="date" v-model="date" @input="input"></b-form-input>
+            <b-input-group-append is-text>
+                <b-form-checkbox switch class="mr-n2 mb-n1" size="sm" v-model="raw" value="true">raw</b-form-checkbox>
+            </b-input-group-append>
         </b-input-group>
-        <b-input-group>
+        <b-input-group size="sm">
             <b-form-textarea size="sm" placeholder="urls" v-model="urls" :rows="row" @input="input"></b-form-textarea>
         </b-input-group>
-        <b-input-group>
+        <b-input-group size="sm">
             <b-form-input size="sm" type="text" placeholder="filePath" v-model="filePath"></b-form-input>
             <b-button size="sm" variant="outline-primary" :disabled="loading" @click="upload">upload</b-button>
         </b-input-group>
@@ -184,6 +190,7 @@
             sort: '',
             date: formatDate(new Date(), 'YYYYMMDD'),
             filePath: '',
+            raw: false,
             loading: false
         },
         methods: {
@@ -217,7 +224,7 @@
                     alert('文件路径为空')
                     return
                 }
-                return addFile(filePath, file)
+                return addFile(filePath, file, this.raw)
             },
             input() {
                 if (this.sort !== undefined && this.sort != null && this.sort !== '') {
@@ -242,6 +249,7 @@
         data: {
             urls: '',
             sort: '',
+            raw: false,
             date: formatDate(new Date(), 'YYYYMMDD'),
             filePath: '',
             loading: false
@@ -285,7 +293,7 @@
                     alert('文件路径为空')
                     return
                 }
-                return addUrl(filePath, url)
+                return addUrl(filePath, url, this.raw)
             },
             input() {
                 if (this.sort !== undefined && this.sort != null && this.sort !== '') {
