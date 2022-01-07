@@ -23,7 +23,7 @@ const (
 var lastFileInfos []model.FileSimpleInfo
 var lastFileInfoLock sync.Mutex
 
-func AddUrl(ctx context.Context, filePath string, url string, compressionImage bool) (*model.FileSimpleInfo, error) {
+func AddUrl(ctx context.Context, filePath string, url string, raw bool) (*model.FileSimpleInfo, error) {
 	if url == "" {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Error("添加链接，文件下载连接为空")
 		return nil, fmt.Errorf("添加链接，文件下载连接为空")
@@ -49,16 +49,16 @@ func AddUrl(ctx context.Context, filePath string, url string, compressionImage b
 		return nil, fmt.Errorf("添加链接，文件下载响应码失败: %+v", statusCode)
 	}
 
-	return AddFile(ctx, filePath, response.RawBody(), compressionImage)
+	return AddFile(ctx, filePath, response.RawBody(), raw)
 }
 
-func AddFile(ctx context.Context, filePath string, reader io.Reader, compressionImage bool) (*model.FileSimpleInfo, error) {
+func AddFile(ctx context.Context, filePath string, reader io.Reader, raw bool) (*model.FileSimpleInfo, error) {
 	fileExt := path.Ext(filePath)
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"fileExt": fileExt}).Info("添加文件，文件拓展名")
 	format, err := imaging.FormatFromExtension(fileExt)
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"format": format, "err": err}).Info("添加文件，解析图片拓展名")
 
-	if compressionImage && err == nil && format != imaging.GIF {
+	if !raw && err == nil && format != imaging.GIF {
 		buffer := &bytes.Buffer{}
 		_, err = io.Copy(buffer, reader)
 		if err != nil {

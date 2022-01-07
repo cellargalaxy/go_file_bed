@@ -80,7 +80,7 @@ func (this FileSyncClient) Push(ctx context.Context, localPath, remotePath strin
 		if file == nil || err != nil {
 			continue
 		}
-		this.client.AddFile(ctx, remote, file)
+		this.client.AddFile(ctx, remote, file, true)
 	}
 	return nil
 }
@@ -125,7 +125,7 @@ func (this FileSyncClient) Pull(ctx context.Context, localPath, remotePath strin
 		if err != nil {
 			continue
 		}
-		AddUrl(ctx, local, url, false)
+		AddUrl(ctx, local, url, true)
 	}
 	return nil
 }

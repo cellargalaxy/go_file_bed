@@ -12,6 +12,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"path"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -25,6 +28,9 @@ func (this FileBedHandler) String() string {
 }
 
 func (this FileBedHandler) GetAddress(ctx context.Context) string {
+	if strings.HasSuffix(this.Address, "/") {
+		return this.Address[:len(this.Address)-1]
+	}
 	return this.Address
 }
 func (this FileBedHandler) GetSecret(ctx context.Context) string {
@@ -130,12 +136,16 @@ func (this FileBedClient) DownloadFile(ctx context.Context, filePath string, wri
 }
 
 func (this FileBedClient) GetFileDownloadUrl(ctx context.Context, filePath string) (string, error) {
-	url := this.handler.GetAddress(ctx) + filePath
+	url := this.handler.GetAddress(ctx)
+	if strings.HasSuffix(url, "/") {
+		url = url[:len(url)-1]
+	}
+	url += path.Join(model.FileUrl, filePath)
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"url": url}).Info("获取下载文件链接")
 	return url, nil
 }
 
-func (this FileBedClient) AddFile(ctx context.Context, filePath string, reader io.Reader) (*model.FileSimpleInfo, error) {
+func (this FileBedClient) AddFile(ctx context.Context, filePath string, reader io.Reader, raw bool) (*model.FileSimpleInfo, error) {
 	var jsonString string
 	var object *model.FileAddResponse
 	var err error
@@ -144,7 +154,7 @@ func (this FileBedClient) AddFile(ctx context.Context, filePath string, reader i
 		if err != nil {
 			return nil, err
 		}
-		jsonString, err = this.requestAddFile(ctx, jwtToken, filePath, reader)
+		jsonString, err = this.requestAddFile(ctx, jwtToken, filePath, reader, raw)
 		if err == nil {
 			object, err = this.parseAddFile(ctx, jsonString)
 			if object != nil && err == nil {
@@ -174,13 +184,14 @@ func (this FileBedClient) parseAddFile(ctx context.Context, jsonString string) (
 	return &response.Data, nil
 }
 
-func (this FileBedClient) requestAddFile(ctx context.Context, jwtToken string, filePath string, reader io.Reader) (string, error) {
+func (this FileBedClient) requestAddFile(ctx context.Context, jwtToken string, filePath string, reader io.Reader, raw bool) (string, error) {
 	response, err := this.httpClient.R().SetContext(ctx).
 		SetHeader("Authorization", "Bearer "+jwtToken).
 		SetHeader(util.LogIdKey, fmt.Sprint(util.GetLogId(ctx))).
 		SetFileReader("file", filePath, reader).
 		SetFormData(map[string]string{
 			"path": filePath,
+			"raw":  strconv.FormatBool(raw),
 		}).
 		Post(this.handler.GetAddress(ctx) + model.AddFileUrl)
 

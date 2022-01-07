@@ -19,6 +19,7 @@ type FileCompleteInfo struct {
 type UrlAddRequest struct {
 	Path string `json:"path" form:"path" query:"path"`
 	Url  string `json:"url" form:"url" query:"url"`
+	Raw  bool   `json:"raw" form:"raw" query:"raw"`
 }
 
 func (this UrlAddRequest) String() string {

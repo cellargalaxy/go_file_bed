@@ -2,6 +2,7 @@
 go_file_bed.exe
 go_file_bed
 file_bed
+test/file_bed
 
 ### STS ###
 .apt_generated

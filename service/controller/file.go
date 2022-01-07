@@ -8,7 +8,7 @@ import (
 )
 
 func AddUrl(ctx context.Context, request model.UrlAddRequest) (*model.UrlAddResponse, error) {
-	object, err := service.AddUrl(ctx, request.Path, request.Url, true)
+	object, err := service.AddUrl(ctx, request.Path, request.Url, request.Raw)
 	if err != nil {
 		return nil, err
 	}
@@ -17,8 +17,8 @@ func AddUrl(ctx context.Context, request model.UrlAddRequest) (*model.UrlAddResp
 	return &response, nil
 }
 
-func AddFile(ctx context.Context, filePath string, reader io.Reader) (*model.FileAddResponse, error) {
-	object, err := service.AddFile(ctx, filePath, reader, true)
+func AddFile(ctx context.Context, filePath string, reader io.Reader, raw bool) (*model.FileAddResponse, error) {
+	object, err := service.AddFile(ctx, filePath, reader, raw)
 	if err != nil {
 		return nil, err
 	}

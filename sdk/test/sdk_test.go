@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	address = "127.0.0.1" + model.ListenAddress
+	address = "http://127.0.0.1" + model.ListenAddress
 	secret  = "secret"
 )
 
@@ -25,7 +25,7 @@ func TestAddFile(test *testing.T) {
 		test.Error(err)
 		test.FailNow()
 	}
-	response, err := client.AddFile(ctx, filePath, reader)
+	response, err := client.AddFile(ctx, filePath, reader, true)
 	test.Logf("response: %+v\r\n", util.ToJsonIndentString(response))
 	if err != nil {
 		test.Error(err)
@@ -41,7 +41,7 @@ func TestGetFileCompleteInfo(test *testing.T) {
 		test.FailNow()
 	}
 	var request model.FileCompleteInfoGetRequest
-	request.Path = ""
+	request.Path = "aaa/20211205/(pid-42733520)Forever.png.JPEG"
 	response, err := client.GetFileCompleteInfo(ctx, request)
 	test.Logf("response: %+v\r\n", util.ToJsonIndentString(response))
 	if err != nil {
@@ -58,7 +58,7 @@ func TestListFileSimpleInfo(test *testing.T) {
 		test.FailNow()
 	}
 	var request model.FileSimpleInfoListRequest
-	request.Path = ""
+	request.Path = "aaa/20211205"
 	response, err := client.ListFileSimpleInfo(ctx, request)
 	test.Logf("response: %+v\r\n", util.ToJsonIndentString(response))
 	if err != nil {
