@@ -74,6 +74,7 @@ func (this FrpClient) Pull(ctx context.Context, localPath, remotePath string) er
 	}
 
 	if completeInfo.Size >= 1024*1024 { //1M
+		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Info("frp文件，大文件")
 		err = dao.MoveFile(ctx, tmpInfo.Path, localPath)
 		if err != nil {
 			dao.DeleteFile(ctx, localPath)
@@ -151,6 +152,7 @@ func (this FrpClient) parseFrpFile(ctx context.Context, data []byte) ([]string, 
 	var p pre
 	err := xml.Unmarshal(data, &p)
 	if err != nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Warn("frp文件，解析xml异常")
 		return nil, err
 	}
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"p": p}).Info("frp文件")
