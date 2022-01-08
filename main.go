@@ -4,12 +4,14 @@ import (
 	"github.com/cellargalaxy/go_common/util"
 	"github.com/cellargalaxy/go_file_bed/config"
 	"github.com/cellargalaxy/go_file_bed/controller"
+	"github.com/cellargalaxy/go_file_bed/corn"
 	"github.com/sirupsen/logrus"
 )
 
 func init() {
 	logrus.SetLevel(config.Config.LogLevel)
 	util.InitLog(util.GetServerNameWithPanic())
+	corn.Init()
 }
 
 /**

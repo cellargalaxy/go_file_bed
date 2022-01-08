@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func init() {
+func Init() {
 	ctx := util.CreateLogCtx()
 	cronObject := cron.New()
 
