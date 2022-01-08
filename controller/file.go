@@ -32,7 +32,7 @@ func addFile(ctx *gin.Context) {
 		return
 	}
 	defer file.Close()
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"filePath": filePath, "filename": header.Filename}).Info("添加文件")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"filePath": filePath, "filename": header.Filename, "raw": rawString}).Info("添加文件")
 
 	ctx.JSON(http.StatusOK, util.CreateResponse(controller.AddFile(ctx, filePath, file, strings.ToLower(rawString) == "true")))
 }
