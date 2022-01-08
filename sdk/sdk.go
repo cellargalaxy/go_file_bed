@@ -344,7 +344,8 @@ func (this FileBedClient) requestListFileSimpleInfo(ctx context.Context, jwtToke
 func (this FileBedClient) genJWT(ctx context.Context) (string, error) {
 	now := time.Now()
 	var claims common_model.Claims
-	claims.IssuedAt = now.Unix()
+	claims.CreateTime = now.Unix()
+	claims.IssuedAt = now.Unix() - int64(this.retry*60)
 	claims.ExpiresAt = now.Unix() + int64(this.retry*60)
 	claims.RequestId = fmt.Sprint(util.GenId())
 	jwtToken, err := util.GenJWT(ctx, this.handler.GetSecret(ctx), claims)
