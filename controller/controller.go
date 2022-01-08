@@ -29,6 +29,9 @@ func Controller() error {
 	engine.GET(model.ListFileSimpleInfoUrl, validate, listFileSimpleInfo)
 	engine.GET(model.ListLastFileInfoUrl, validate, listLastFileInfo)
 
+	engine.POST(model.PushSyncFileUrl, validate, pushSyncFile)
+	engine.POST(model.PullSyncFileUrl, validate, pullSyncFile)
+
 	err := engine.Run(model.ListenAddress)
 	if err != nil {
 		panic(fmt.Errorf("web服务启动，异常: %+v", err))

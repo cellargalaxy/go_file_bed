@@ -167,6 +167,60 @@ async function listLastFileInfo() {
     return null
 }
 
+async function pushSyncFile(address, secret, path) {
+    if (address === undefined || address == null || address === '') {
+        dealErr('address为空')
+        return null
+    }
+    if (secret === undefined || secret == null || secret === '') {
+        dealErr('secret为空')
+        return null
+    }
+
+    let url = '../../api/pushSyncFile'
+    if (document.domain === 'localhost') {
+        url += '.json'
+    }
+    try {
+        let response = await instance.post(url, {
+            address: address,
+            secret: secret,
+            path: path,
+        })
+        return dealResponse(response)
+    } catch (error) {
+        dealErr(error)
+    }
+    return null
+}
+
+async function pullSyncFile(address, secret, path) {
+    if (address === undefined || address == null || address === '') {
+        dealErr('address为空')
+        return null
+    }
+    if (secret === undefined || secret == null || secret === '') {
+        dealErr('secret为空')
+        return null
+    }
+
+    let url = '../../api/pullSyncFile'
+    if (document.domain === 'localhost') {
+        url += '.json'
+    }
+    try {
+        let response = await instance.post(url, {
+            address: address,
+            secret: secret,
+            path: path,
+        })
+        return dealResponse(response)
+    } catch (error) {
+        dealErr(error)
+    }
+    return null
+}
+
 function dealResponse(response) {
     let result = response.data
     if (result.code !== 1) {

@@ -19,6 +19,8 @@ const (
 	GetFileCompleteInfoUrl = "/api/getFileCompleteInfo"
 	ListFileSimpleInfoUrl  = "/api/listFileSimpleInfo"
 	ListLastFileInfoUrl    = "/api/listLastFileInfo"
+	PushSyncFileUrl        = "/api/pushSyncFile"
+	PullSyncFileUrl        = "/api/pullSyncFile"
 )
 
 type Config struct {

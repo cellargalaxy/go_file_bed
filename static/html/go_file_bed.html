@@ -56,6 +56,18 @@
 
     <br/>
 
+    <form id="sync_file_form">
+        <b-input-group size="sm">
+            <b-form-input size="sm" type="text" placeholder="address" v-model="address"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="secret" v-model="secret"></b-form-input>
+            <b-form-input size="sm" type="text" placeholder="path" v-model="path"></b-form-input>
+            <b-button size="sm" variant="outline-success" :disabled="pulling" @click="pullSyncFile">pull🔽</b-button>
+            <b-button size="sm" variant="outline-primary" :disabled="pushing" @click="pushSyncFile">push🔼</b-button>
+        </b-input-group>
+    </form>
+
+    <br/>
+
     <b-table id="last_file_info_table" stacked="xl" striped hover responsive small
              :fields="fields" :items="infos" :busy="loading">
         <template #cell(name)="data">
@@ -157,8 +169,6 @@
 <script src="../js/api.js"></script>
 
 <script>
-    window.onbeforeunload = (event) => 'maybe some data not save'
-
     let login_vue = new Vue({
         el: '#login',
         data: {
@@ -318,6 +328,48 @@
                 this.date = formatDate(new Date(), 'YYYYMMDD')
                 this.filePath = ''
                 this.loading = false
+            }
+        }
+    })
+
+    const sync_file_form_vue = new Vue({
+        el: '#sync_file_form',
+        data: {
+            address: '',
+            secret: '',
+            path: '',
+            pulling: false,
+            pushing: false
+        },
+        methods: {
+            async pullSyncFile() {
+                if (!confirm("确定pull🔽？")) {
+                    return
+                }
+                this.pulling = true
+                let promise = pullSyncFile(this.address, this.secret, this.path)
+                await promise
+                this.pulling = false
+                flush()
+                alert('done')
+            },
+            async pushSyncFile() {
+                if (!confirm("确定push🔼？")) {
+                    return
+                }
+                this.pushing = true
+                let promise = pushSyncFile(this.address, this.secret, this.path)
+                await promise
+                this.pushing = false
+                flush()
+                alert('done')
+            },
+            flush() {
+                this.address = ''
+                this.secret = ''
+                this.path = ''
+                this.pulling = false
+                this.pushing = false
             }
         }
     })
@@ -529,7 +581,8 @@
         file_info_table_vue.listFolderInfo()
     }
 
-    if (login_vue.logined()) {
+    if (document.domain !== 'localhost' && login_vue.logined()) {
+        window.onbeforeunload = (event) => 'maybe some data not save'
         flush()
     }
 </script>
