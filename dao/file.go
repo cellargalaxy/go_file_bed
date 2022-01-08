@@ -221,12 +221,41 @@ func selectFolderSizeAndCount(ctx context.Context, folderPath string) (int64, in
 	return size, count, nil
 }
 
+func GetFileData(ctx context.Context, filePath string) ([]byte, error) {
+	bedPath, err := createBedPath(ctx, filePath)
+	if err != nil {
+		return nil, err
+	}
+	return util.ReadFileWithData(ctx, bedPath, nil)
+}
+
 func GetReadFile(ctx context.Context, filePath string) (*os.File, error) {
 	bedPath, err := createBedPath(ctx, filePath)
 	if err != nil {
 		return nil, err
 	}
 	return util.GetReadFile(ctx, bedPath)
+}
+
+func MoveFile(ctx context.Context, formPath, toPath string) error {
+	formBedPath, err := createBedPath(ctx, formPath)
+	if err != nil {
+		return err
+	}
+	toBedPath, err := createBedPath(ctx, toPath)
+	if err != nil {
+		return err
+	}
+	_, err = util.GetReadFile(ctx, toBedPath)
+	if err != nil {
+		return err
+	}
+	err = os.Rename(formBedPath, toBedPath)
+	if err != nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("移动文件，异常")
+		return fmt.Errorf("移动文件，异常: %+v", err)
+	}
+	return nil
 }
 
 func createBedPath(ctx context.Context, fileOrFolderPath string) (string, error) {

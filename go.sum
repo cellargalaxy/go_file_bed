@@ -1,11 +1,12 @@
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
+github.com/PuerkitoBio/goquery v1.8.0 h1:PJTF7AmFCFKk1N6V6jmKfrNH9tV5pNE6lZMkG0gta/U=
+github.com/PuerkitoBio/goquery v1.8.0/go.mod h1:ypIiRMtY7COPGk+I/YbZLbxsxn9g5ejnI2HSMtkjZvI=
+github.com/andybalholm/cascadia v1.3.1 h1:nhxRkql1kdYCc8Snf7D5/D3spOX+dBgjA6u8x004T2c=
+github.com/andybalholm/cascadia v1.3.1/go.mod h1:R4bJ1UQfqADjvDa4P6HZHLh/3OxWWEqc0Sk8XGwHqvA=
 github.com/antonfisher/nested-logrus-formatter v1.3.1 h1:NFJIr+pzwv5QLHTPyKz9UMEoHck02Q9L0FP13b/xSbQ=
 github.com/antonfisher/nested-logrus-formatter v1.3.1/go.mod h1:6WTfyWFkBc9+zyBaKIqRrg/KwMqBbodBjgbHjDz7zjA=
-github.com/cellargalaxy/go_common v0.0.0-20220105063337-fbf660196812 h1:izGJLrLIAI/ygAor/bqCwdUi0pyR93IairBrJRNeBd8=
 github.com/cellargalaxy/go_common v0.0.0-20220105063337-fbf660196812/go.mod h1:/UedQI9h94Uu6soLym5Xe/W5z5dv2Mg/eD5KsACP1B4=
-github.com/cellargalaxy/go_common v0.0.0-20220108065816-8567b2ce797c h1:Xl/PxNkqg4Ky2rZ8+5Hs0uCu0jJfA8FzcSYBCPaBpt8=
-github.com/cellargalaxy/go_common v0.0.0-20220108065816-8567b2ce797c/go.mod h1:/UedQI9h94Uu6soLym5Xe/W5z5dv2Mg/eD5KsACP1B4=
 github.com/cellargalaxy/go_common v0.0.0-20220108065924-bd214e64393d h1:6DOJVd5unfWBkSw7z5mfkd7lOX9mIQalhH59gG+PwYc=
 github.com/cellargalaxy/go_common v0.0.0-20220108065924-bd214e64393d/go.mod h1:/UedQI9h94Uu6soLym5Xe/W5z5dv2Mg/eD5KsACP1B4=
 github.com/cellargalaxy/server_center v0.0.0-20220105065525-8786d1c3144e h1:O3U5iUfnJ2gxYp484dFhUsC8yUKqwZvJ5S0gAblKBzk=
@@ -121,6 +122,7 @@ golang.org/x/image v0.0.0-20211028202545-6944b10bf410/go.mod h1:023OzeP/+EPmXeap
 golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
 golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=
 golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4/go.mod h1:p54w0d4576C0XHj96bSt6lcn1PtDYWL6XObtHCRCNQM=
+golang.org/x/net v0.0.0-20210916014120-12bc252f5db8/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.0.0-20210924151903-3ad01bbaa167/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.0.0-20211029224645-99673261e6eb/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=

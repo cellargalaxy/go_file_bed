@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"path"
+	"strconv"
 	"sync"
 )
 
@@ -49,7 +50,13 @@ func AddUrl(ctx context.Context, filePath string, url string, raw bool) (*model.
 		return nil, fmt.Errorf("添加链接，文件下载响应码失败: %+v", statusCode)
 	}
 
-	return AddFile(ctx, filePath, response.RawBody(), raw)
+	reader := response.RawBody()
+	defer reader.Close()
+	return AddFile(ctx, filePath, reader, raw)
+}
+
+func AddTmpFile(ctx context.Context, reader io.Reader) (*model.FileSimpleInfo, error) {
+	return AddFile(ctx, path.Join(".tmp", strconv.Itoa(int(util.GenId()))), reader, true)
 }
 
 func AddFile(ctx context.Context, filePath string, reader io.Reader, raw bool) (*model.FileSimpleInfo, error) {

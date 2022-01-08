@@ -125,7 +125,9 @@ func (this FileBedClient) DownloadFile(ctx context.Context, filePath string, wri
 		return fmt.Errorf("下载文件，文件下载响应码失败: %+v", statusCode)
 	}
 
-	written, err := io.Copy(writer, response.RawBody())
+	reader := response.RawBody()
+	defer reader.Close()
+	written, err := io.Copy(writer, reader)
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"filePath": filePath, "err": err}).Error("下载文件，拷贝数据异常")
 		return fmt.Errorf("下载文件，拷贝数据异常: %+v", err)
