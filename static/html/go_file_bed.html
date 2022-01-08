@@ -111,7 +111,7 @@
             <code>{{data.item.md5}}</code>
         </template>
         <template #cell(url)="data">
-            <b-button-group v-if="data.item.isFile">
+            <b-button-group v-if="data.item.is_file">
                 <b-button size="sm" variant="outline-success" @click="copyShort(data.item)">short</b-button>
                 <b-button size="sm" variant="outline-primary" @click="copyLong(data.item)">long</b-button>
                 <b-button size="sm" variant="outline-warning" @click="copyMarkdown(data.item)">markdown</b-button>
