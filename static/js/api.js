@@ -1,4 +1,4 @@
-const instance = axios.create({timeout: 60 * 1000})
+const instance = axios.create({timeout: 60 * 60 * 1000})
 instance.interceptors.request.use(
     config => {
         config.headers['Authorization'] = 'Bearer ' + enJwt()

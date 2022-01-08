@@ -44,7 +44,7 @@ type FileBedClient struct {
 }
 
 func NewDefaultFileBedClient(address, secret string) (*FileBedClient, error) {
-	return NewFileBedClient(time.Minute, 3*time.Second, 3, &FileBedHandler{Address: address, Secret: secret})
+	return NewFileBedClient(time.Hour, 3*time.Second, 3, &FileBedHandler{Address: address, Secret: secret})
 }
 
 func NewFileBedClient(timeout, sleep time.Duration, retry int, handler model.FileBedHandlerInter) (*FileBedClient, error) {
