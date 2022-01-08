@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/cellargalaxy/go_common/util"
 	"github.com/cellargalaxy/go_file_bed/dao"
 	"github.com/cellargalaxy/go_file_bed/model"
@@ -97,6 +98,7 @@ func (this FrpClient) Pull(ctx context.Context, localPath, remotePath string) er
 		}
 		return err
 	}
+	dao.DeleteFile(ctx, localPath)
 	dao.DeleteFile(ctx, tmpInfo.Path)
 	for i := range names {
 		localSubPath := path.Join(localPath, names[i])
@@ -149,12 +151,29 @@ func (this pre) String() string {
 }
 
 func (this FrpClient) parseFrpFile(ctx context.Context, data []byte) ([]string, error) {
-	var p pre
-	err := xml.Unmarshal(data, &p)
+	var err error
+
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(data)))
 	if err != nil {
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Warn("frp文件，解析xml异常")
-		return nil, err
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Warn("frp文件，html解析失败")
+		return nil, fmt.Errorf("frp文件，html解析失败: %+v", err)
 	}
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"p": p}).Info("frp文件")
-	return p.Names, nil
+
+	preSelection := doc.Find("html > body > pre")
+	if preSelection == nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Info("frp文件，非frp页面")
+		return nil, fmt.Errorf("frp文件，非frp页面")
+	}
+	if len(preSelection.Nodes) != 1 {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Info("frp文件，非frp页面")
+		return nil, fmt.Errorf("frp文件，非frp页面")
+	}
+
+	var list []string
+	preSelection.Find("a").Each(func(i int, aSelection *goquery.Selection) {
+		list = append(list, aSelection.Text())
+	})
+
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"list": list}).Info("frp文件")
+	return list, nil
 }
