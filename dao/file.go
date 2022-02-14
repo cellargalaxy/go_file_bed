@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/cellargalaxy/go_common/util"
+	"github.com/cellargalaxy/go_file_bed/config"
 	"github.com/cellargalaxy/go_file_bed/model"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -101,14 +102,18 @@ func SelectFileCompleteInfo(ctx context.Context, fileOrFolderPath string) (*mode
 	info.IsFile = !pathInfo.IsDir()
 
 	if !pathInfo.IsDir() {
-		md5, err := util.GetFileMd5(ctx, bedPath)
-		if err != nil {
-			return nil, err
-		}
-
 		info.Size = pathInfo.Size()
 		info.Count = 1
-		info.Md5 = md5
+
+		info.Md5 = "out_max_hash_limit"
+		if info.Size <= config.Config.MaxHashLimit {
+			md5, err := util.GetFileMd5(ctx, bedPath)
+			if err != nil {
+				return nil, err
+			}
+			info.Md5 = md5
+		}
+
 		return &info, nil
 	}
 
