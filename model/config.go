@@ -10,6 +10,7 @@ import (
 const (
 	ListenAddress = ":8880"
 	FileBedPath   = "file_bed"
+	TrashPath     = "/.trash"
 
 	FileUrl = "/file"
 

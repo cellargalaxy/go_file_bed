@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"path"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -92,7 +93,39 @@ func AddFile(ctx context.Context, filePath string, reader io.Reader, raw bool) (
 }
 
 func RemoveFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, error) {
-	info, err := dao.DeleteFile(ctx, filePath)
+	filePath = util.ClearPath(ctx, path.Join("/", filePath))
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"filePath": filePath}).Info("删除文件")
+
+	if strings.HasPrefix(filePath, model.TrashPath) {
+		info, err := dao.DeleteFile(ctx, filePath)
+		if err != nil {
+			return nil, err
+		}
+		info = initFileSimpleInfo(ctx, info)
+		return info, err
+	}
+
+	info, err := GetFileSimpleInfo(ctx, filePath)
+	if info == nil || err != nil {
+		return info, err
+	}
+
+	ext := path.Ext(filePath)
+	namePath := strings.TrimRight(filePath, ext)
+	ligId := util.GetLogId(ctx)
+	toPath := fmt.Sprintf("%+v.%+v%+v", namePath, strconv.Itoa(int(ligId)), ext)
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"toPath": toPath}).Info("删除文件")
+
+	err = dao.MoveFile(ctx, filePath, toPath)
+	if err == nil {
+		return info, nil
+	}
+	dao.MoveFile(ctx, toPath, filePath)
+	return info, err
+}
+
+func GetFileSimpleInfo(ctx context.Context, fileOrFolderPath string) (*model.FileSimpleInfo, error) {
+	info, err := dao.SelectFileSimpleInfo(ctx, fileOrFolderPath)
 	if err != nil {
 		return nil, err
 	}
