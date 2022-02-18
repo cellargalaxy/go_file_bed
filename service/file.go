@@ -124,6 +124,7 @@ func RemoveFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 	namePath := strings.TrimRight(filePath, fileExt)
 	ligId := util.GetLogId(ctx)
 	toPath := fmt.Sprintf("%+v.%+v%+v", namePath, strconv.Itoa(int(ligId)), fileExt)
+	toPath = path.Join(model.TrashPath, toPath)
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"toPath": toPath}).Info("删除文件")
 
 	err = dao.MoveFile(ctx, filePath, toPath)

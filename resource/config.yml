@@ -2,7 +2,7 @@ log_level: info
 retry: 0
 timeout: 3s
 sleep: 0s
-secret: ""
+secret: "secret"
 last_file_count: 10
 max_hash_limit: 134217728
 image_target_size: 204800

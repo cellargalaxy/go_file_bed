@@ -36,9 +36,14 @@ func DeleteFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 		return info, err
 	}
 
-	err = util.RemoveFile(ctx, bedPath)
+	err = deleteFile(ctx, bedPath)
+	return info, err
+}
+
+func deleteFile(ctx context.Context, bedPath string) error {
+	err := util.RemoveFile(ctx, bedPath)
 	if err != nil {
-		return info, err
+		return err
 	}
 
 	//将`/aaa/bbb/text.txt`变为`/aaa/bbb/`
@@ -49,22 +54,22 @@ func DeleteFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"folderPath": folderPath}).Info("删除文件，删除父文件夹")
 		files, err := util.ListFile(ctx, folderPath)
 		if err != nil {
-			return info, err
+			return err
 		}
 		if len(files) > 0 {
 			logrus.WithContext(ctx).WithFields(logrus.Fields{"folderPath": folderPath}).Info("删除文件，父文件夹不为空")
-			return info, nil
+			return nil
 		}
 		err = util.RemoveFile(ctx, folderPath)
 		if err != nil {
-			return info, err
+			return err
 		}
 		//将`/aaa/bbb`变为`/aaa`
 		//如果上面不将`/aaa/bbb/`变为`/aaa/bbb`
 		//这里`/aaa/bbb/`依然会返回`/aaa/bbb/`
 		folderPath = path.Dir(folderPath)
 	}
-	return info, err
+	return err
 }
 
 func SelectFileSimpleInfo(ctx context.Context, fileOrFolderPath string) (*model.FileSimpleInfo, error) {
@@ -251,7 +256,13 @@ func MoveFile(ctx context.Context, formPath, toPath string) error {
 	if err != nil {
 		return err
 	}
-	_, err = util.GetReadFile(ctx, toBedPath)
+	err = moveFile(ctx, formBedPath, toBedPath)
+	deleteFile(ctx, formBedPath)
+	return err
+}
+
+func moveFile(ctx context.Context, formBedPath, toBedPath string) error {
+	_, err := util.GetReadFile(ctx, toBedPath)
 	if err != nil {
 		return err
 	}
