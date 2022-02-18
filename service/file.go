@@ -106,17 +106,21 @@ func RemoveFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 	filePath = util.ClearPath(ctx, path.Join("/", filePath))
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"filePath": filePath}).Info("删除文件")
 
+	info, err := GetFileSimpleInfo(ctx, filePath)
+	if info == nil || err != nil {
+		return nil, err
+	}
+	if !info.IsFile {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Info("删除文件，不允许删除文件夹")
+		return nil, fmt.Errorf("删除文件，不允许删除文件夹")
+	}
+
 	if strings.HasPrefix(filePath, model.TrashPath) {
 		info, err := dao.DeleteFile(ctx, filePath)
 		if err != nil {
 			return nil, err
 		}
 		info = initFileSimpleInfo(ctx, info)
-		return info, err
-	}
-
-	info, err := GetFileSimpleInfo(ctx, filePath)
-	if info == nil || err != nil {
 		return info, err
 	}
 
