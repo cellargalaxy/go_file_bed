@@ -4,14 +4,16 @@ go 1.16
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
-	github.com/cellargalaxy/go_common v0.0.0-20220116165946-f64f88733260
-	github.com/cellargalaxy/server_center v0.0.0-20220122085940-88d593c305d8
+	github.com/cellargalaxy/go_common v0.0.0-20220216154636-d30ecd7ed566
+	github.com/cellargalaxy/server_center v0.0.0-20220217061656-f4c26b8bd4a5
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.8.1
+	github.com/wumansgy/goEncrypt v1.0.0 // indirect
+	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
-	golang.org/x/net v0.0.0-20220121210141-e204ce36a2ba // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 )
