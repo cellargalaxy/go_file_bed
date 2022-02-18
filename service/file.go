@@ -56,30 +56,40 @@ func AddUrl(ctx context.Context, filePath string, url string, raw bool) (*model.
 	return AddFile(ctx, filePath, reader, raw)
 }
 
-func AddTmpFile(ctx context.Context, reader io.Reader) (*model.FileSimpleInfo, error) {
-	return AddFile(ctx, path.Join(".tmp", strconv.Itoa(int(util.GenId()))), reader, true)
-}
+//func AddTmpFile(ctx context.Context, reader io.Reader) (*model.FileSimpleInfo, error) {
+//	return AddFile(ctx, path.Join(".tmp", strconv.Itoa(int(util.GenId()))), reader, true)
+//}
 
 func AddFile(ctx context.Context, filePath string, reader io.Reader, raw bool) (*model.FileSimpleInfo, error) {
-	fileExt := path.Ext(filePath)
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"fileExt": fileExt}).Info("添加文件，文件拓展名")
-	format, err := imaging.FormatFromExtension(fileExt)
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"format": format, "err": err}).Info("添加文件，解析图片拓展名")
+	filePath = util.ClearPath(ctx, path.Join("/", filePath))
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"filePath": filePath}).Info("删除文件")
 
-	if !raw && err == nil && format != imaging.GIF {
-		buffer := &bytes.Buffer{}
-		_, err = io.Copy(buffer, reader)
-		if err != nil {
-			logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加文件，读取图片数据异常")
-			return nil, err
+	if !strings.HasPrefix(filePath, model.TrashPath) {
+		fileExt := path.Ext(filePath)
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"fileExt": fileExt}).Info("添加文件，文件拓展名")
+		format, err := imaging.FormatFromExtension(fileExt)
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"format": format, "err": err}).Info("添加文件，解析图片拓展名")
+
+		if !raw && err == nil && format != imaging.GIF {
+			buffer := &bytes.Buffer{}
+			_, err = io.Copy(buffer, reader)
+			if err != nil {
+				logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加文件，读取图片数据异常")
+				return nil, err
+			}
+
+			imageBuffer, err := CompressionImage(ctx, buffer)
+			if err != nil {
+				reader = buffer
+			} else {
+				reader = imageBuffer
+				filePath = AddImageExtension(ctx, filePath)
+			}
 		}
 
-		imageBuffer, err := CompressionImage(ctx, buffer)
+		_, err = RemoveFile(ctx, filePath)
 		if err != nil {
-			reader = buffer
-		} else {
-			reader = imageBuffer
-			filePath = AddImageExtension(ctx, filePath)
+			return nil, err
 		}
 	}
 
@@ -110,10 +120,10 @@ func RemoveFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 		return info, err
 	}
 
-	ext := path.Ext(filePath)
-	namePath := strings.TrimRight(filePath, ext)
+	fileExt := path.Ext(filePath)
+	namePath := strings.TrimRight(filePath, fileExt)
 	ligId := util.GetLogId(ctx)
-	toPath := fmt.Sprintf("%+v.%+v%+v", namePath, strconv.Itoa(int(ligId)), ext)
+	toPath := fmt.Sprintf("%+v.%+v%+v", namePath, strconv.Itoa(int(ligId)), fileExt)
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"toPath": toPath}).Info("删除文件")
 
 	err = dao.MoveFile(ctx, filePath, toPath)

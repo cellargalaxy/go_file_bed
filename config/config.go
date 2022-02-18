@@ -30,15 +30,11 @@ func checkAndResetConfig(ctx context.Context, config model.Config) (model.Config
 	if config.LogLevel <= 0 || config.LogLevel > logrus.TraceLevel {
 		config.LogLevel = logrus.InfoLevel
 	}
-	if config.Timeout < 0 {
+	if config.Timeout <= 0 {
 		config.Timeout = 3 * time.Second
 	}
 	if config.Sleep < 0 {
 		config.Sleep = 3 * time.Second
-	}
-	if config.Secret == "" {
-		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Error("secret为空")
-		return config, fmt.Errorf("secret为空")
 	}
 
 	if config.LastFileCount <= 0 {
@@ -49,7 +45,7 @@ func checkAndResetConfig(ctx context.Context, config model.Config) (model.Config
 	}
 
 	if config.ImageTargetSize <= 0 {
-		config.ImageTargetSize = 1024 * 200
+		config.ImageTargetSize = 1024 * 200 //200K
 	}
 	if config.JpegMinQuality <= 0 {
 		config.JpegMinQuality = 20
@@ -63,6 +59,11 @@ func checkAndResetConfig(ctx context.Context, config model.Config) (model.Config
 	}
 	if config.ImageSaveFormat < imaging.JPEG || imaging.BMP < config.ImageSaveFormat {
 		config.ImageSaveFormat = imaging.JPEG
+	}
+
+	if config.Secret == "" {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Error("secret为空")
+		return config, fmt.Errorf("secret为空")
 	}
 
 	err := util.CreateFolderPath(ctx, model.FileBedPath)
@@ -99,4 +100,9 @@ func (this *ServerCenterHandler) ParseConf(ctx context.Context, object sc_model.
 	logrus.SetLevel(Config.LogLevel)
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"Config": Config}).Info("加载配置")
 	return nil
+}
+func (this *ServerCenterHandler) GetDefaultConf(ctx context.Context) string {
+	var config model.Config
+	config, _ = checkAndResetConfig(ctx, config)
+	return util.ToYamlString(config)
 }
