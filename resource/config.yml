@@ -5,6 +5,7 @@ sleep: 0s
 secret: "secret"
 last_file_count: 10
 max_hash_limit: 134217728
+trash_enable: false
 trash_save_time: 720h0m0s
 trash_clear_cron: ""
 image_target_size: 204800
