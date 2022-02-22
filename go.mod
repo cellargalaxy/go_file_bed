@@ -3,7 +3,7 @@ module github.com/cellargalaxy/go_file_bed
 go 1.16
 
 require (
-	github.com/cellargalaxy/go_common v0.0.0-20220221060352-f7c508966f37
+	github.com/cellargalaxy/go_common v0.0.0-20220222050500-014f3159f86e
 	github.com/cellargalaxy/server_center v0.0.0-20220218121938-df47298b3a79
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.7.7

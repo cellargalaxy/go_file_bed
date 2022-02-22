@@ -43,9 +43,9 @@ func clearTrash(ctx context.Context, folderPath string) error {
 
 func parseTrashPath(ctx context.Context, filePath string) (string, int64) {
 	fileExt := path.Ext(filePath)
-	logIdPath := strings.TrimRight(filePath, fileExt)
+	logIdPath := strings.TrimSuffix(filePath, fileExt)
 	logIdExt := path.Ext(logIdPath)
-	namePath := strings.TrimRight(logIdPath, logIdExt)
+	namePath := strings.TrimSuffix(logIdPath, logIdExt)
 	filePath = fmt.Sprintf("%+v%+v", namePath, fileExt)
 	var logId int64
 	if logIdExt != "" {
@@ -59,7 +59,7 @@ func genTrashPath(ctx context.Context, filePath string) string {
 }
 func genTrashPathByLogId(ctx context.Context, filePath string, logId int64) string {
 	fileExt := path.Ext(filePath)
-	namePath := strings.TrimRight(filePath, fileExt)
+	namePath := strings.TrimSuffix(filePath, fileExt)
 	trashPath := fmt.Sprintf("%+v.%+v%+v", namePath, strconv.Itoa(int(logId)), fileExt)
 	trashPath = path.Join(model.TrashPath, trashPath)
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"trashPath": trashPath}).Info("创建回收站路径")

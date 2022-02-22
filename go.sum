@@ -3,8 +3,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/antonfisher/nested-logrus-formatter v1.3.1 h1:NFJIr+pzwv5QLHTPyKz9UMEoHck02Q9L0FP13b/xSbQ=
 github.com/antonfisher/nested-logrus-formatter v1.3.1/go.mod h1:6WTfyWFkBc9+zyBaKIqRrg/KwMqBbodBjgbHjDz7zjA=
 github.com/cellargalaxy/go_common v0.0.0-20220216154636-d30ecd7ed566/go.mod h1:ekw3c/eYKJSN80mZhNEIS0JByE0+U7xeM6mcNE7NCHo=
-github.com/cellargalaxy/go_common v0.0.0-20220221060352-f7c508966f37 h1:HZSKowENh7vQLn0CSgsehCirKYLle9gIlp07Lafiglg=
-github.com/cellargalaxy/go_common v0.0.0-20220221060352-f7c508966f37/go.mod h1:ekw3c/eYKJSN80mZhNEIS0JByE0+U7xeM6mcNE7NCHo=
+github.com/cellargalaxy/go_common v0.0.0-20220222050500-014f3159f86e h1:CuGKYk+XdTX6broH6BUE4nlu23QOGjgp9vG8NXBAydQ=
+github.com/cellargalaxy/go_common v0.0.0-20220222050500-014f3159f86e/go.mod h1:ekw3c/eYKJSN80mZhNEIS0JByE0+U7xeM6mcNE7NCHo=
 github.com/cellargalaxy/server_center v0.0.0-20220218121938-df47298b3a79 h1:YwEZcJYL7R7M2LacVAytXpBa3TDLvtDMCWo3sy+81dI=
 github.com/cellargalaxy/server_center v0.0.0-20220218121938-df47298b3a79/go.mod h1:1DK354Fyx6w4WEU1U8wo8Q5aEwuaa/C5g7b9bG2V6j4=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
