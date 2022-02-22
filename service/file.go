@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -124,18 +123,13 @@ func RemoveFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 		return info, err
 	}
 
-	fileExt := path.Ext(filePath)
-	namePath := strings.TrimRight(filePath, fileExt)
-	ligId := util.GetLogId(ctx)
-	toPath := fmt.Sprintf("%+v.%+v%+v", namePath, strconv.Itoa(int(ligId)), fileExt)
-	toPath = path.Join(model.TrashPath, toPath)
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"toPath": toPath}).Info("删除文件")
+	trashPath := genTrashPath(ctx, filePath)
 
-	err = dao.MoveFile(ctx, filePath, toPath)
+	err = dao.MoveFile(ctx, filePath, trashPath)
 	if err == nil {
 		return info, nil
 	}
-	dao.MoveFile(ctx, toPath, filePath)
+	dao.MoveFile(ctx, trashPath, filePath)
 	return info, err
 }
 

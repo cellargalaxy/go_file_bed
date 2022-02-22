@@ -43,6 +43,9 @@ func checkAndResetConfig(ctx context.Context, config model.Config) (model.Config
 	if config.MaxHashLimit <= 0 {
 		config.MaxHashLimit = 1024 * 1024 * 128 //128M
 	}
+	if config.TrashSaveTime <= 0 {
+		config.TrashSaveTime = 30 * 24 * time.Hour
+	}
 
 	if config.ImageTargetSize <= 0 {
 		config.ImageTargetSize = 1024 * 200 //200K

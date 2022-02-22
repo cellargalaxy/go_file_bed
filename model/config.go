@@ -31,8 +31,10 @@ type Config struct {
 	Sleep    time.Duration `yaml:"sleep" json:"sleep"`
 	Secret   string        `yaml:"secret" json:"-"`
 
-	LastFileCount int   `yaml:"last_file_count" json:"last_file_count"`
-	MaxHashLimit  int64 `yaml:"max_hash_limit" json:"max_hash_limit"`
+	LastFileCount  int           `yaml:"last_file_count" json:"last_file_count"`
+	MaxHashLimit   int64         `yaml:"max_hash_limit" json:"max_hash_limit"`
+	TrashSaveTime  time.Duration `yaml:"trash_save_time" json:"trash_save_time"`
+	TrashClearCron string        `yaml:"trash_clear_cron" json:"trash_clear_cron"`
 
 	ImageTargetSize float64        `yaml:"image_target_size" json:"image_target_size"`
 	JpegMinQuality  float64        `yaml:"jpeg_min_quality" json:"jpeg_min_quality"`

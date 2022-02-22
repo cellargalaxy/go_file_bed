@@ -34,6 +34,15 @@ func Init() {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": job, "entryId": entryId}).Info("定时任务，添加定时")
 	}
 
+	if config.Config.TrashClearCron != "" {
+		var job trashClearJob
+		entryId, err := cronObject.AddJob(config.Config.PushSyncCron, &job)
+		if err != nil {
+			panic(err)
+		}
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": job, "entryId": entryId}).Info("定时任务，添加定时")
+	}
+
 	cronObject.Start()
 	logrus.WithContext(ctx).WithFields(logrus.Fields{}).Info("定时任务，添加完成")
 }
@@ -67,5 +76,19 @@ func (this *pullSyncFileJob) Run() {
 	ctx := util.CreateLogCtx()
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务开完")
 	service.PullSyncFile(ctx, this.Address, this.Secret, "")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务完成")
+}
+
+type trashClearJob struct {
+}
+
+func (this trashClearJob) String() string {
+	return util.ToJsonString(this)
+}
+
+func (this *trashClearJob) Run() {
+	ctx := util.CreateLogCtx()
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务开完")
+	service.ClearTrash(ctx)
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务完成")
 }
