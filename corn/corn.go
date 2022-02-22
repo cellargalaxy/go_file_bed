@@ -36,7 +36,7 @@ func Init() {
 
 	if config.Config.TrashClearCron != "" {
 		var job trashClearJob
-		entryId, err := cronObject.AddJob(config.Config.PushSyncCron, &job)
+		entryId, err := cronObject.AddJob(config.Config.TrashClearCron, &job)
 		if err != nil {
 			panic(err)
 		}
