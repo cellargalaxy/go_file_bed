@@ -114,7 +114,7 @@ func RemoveFile(ctx context.Context, filePath string) (*model.FileSimpleInfo, er
 		return nil, fmt.Errorf("删除文件，不允许删除文件夹")
 	}
 
-	if strings.HasPrefix(filePath, model.TrashPath) {
+	if !config.Config.TrashEnable || strings.HasPrefix(filePath, model.TrashPath) {
 		info, err := dao.DeleteFile(ctx, filePath)
 		if err != nil {
 			return nil, err
