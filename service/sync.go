@@ -117,7 +117,8 @@ func (this FileSyncClient) Pull(ctx context.Context, localPath, remotePath strin
 		if err != nil {
 			continue
 		}
-		if localInfo != nil && localInfo.Md5 == remoteInfo.Md5 {
+		match := this.matchInfo(ctx, localInfo, remoteInfo)
+		if match {
 			continue
 		}
 
@@ -128,4 +129,17 @@ func (this FileSyncClient) Pull(ctx context.Context, localPath, remotePath strin
 		AddUrl(ctx, local, url, true)
 	}
 	return nil
+}
+
+func (this FileSyncClient) matchInfo(ctx context.Context, localInfo, remoteInfo *model.FileCompleteInfo) bool {
+	if remoteInfo == nil {
+		return true
+	}
+	if localInfo == nil {
+		return false
+	}
+	if localInfo.Md5 != "" && remoteInfo.Md5 != "" {
+		return localInfo.Md5 == remoteInfo.Md5
+	}
+	return localInfo.Size == remoteInfo.Size
 }
