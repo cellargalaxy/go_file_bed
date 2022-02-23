@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/cellargalaxy/go_common v0.0.0-20220223130816-e4501e716a6d
-	github.com/cellargalaxy/server_center v0.0.0-20220218121938-df47298b3a79
+	github.com/cellargalaxy/server_center v0.0.0-20220222050617-6f52caceed22
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-resty/resty/v2 v2.7.0
