@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36"
+	userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36"
 )
 
 var lastFileInfos []model.FileSimpleInfo
@@ -30,29 +30,39 @@ func AddUrl(ctx context.Context, filePath string, url string, raw bool) (*model.
 		return nil, fmt.Errorf("添加链接，文件下载连接为空")
 	}
 
-	response, err := httpClient.R().SetContext(ctx).
-		SetHeader("User-Agent", userAgent).
-		SetDoNotParseResponse(true).
-		Get(url)
-
+	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加链接，文件下载异常")
-		return nil, fmt.Errorf("添加链接，文件下载异常")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加链接，创建http请求异常")
+		return nil, fmt.Errorf("添加链接，创建http请求异常: %+v", err)
 	}
-	if response == nil {
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加链接，文件下载响应为空")
-		return nil, fmt.Errorf("添加链接，文件下载响应为空")
+	if request == nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加链接，创建http请求为空")
+		return nil, fmt.Errorf("添加链接，创建http请求为空")
 	}
-	statusCode := response.StatusCode()
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"statusCode": statusCode}).Info("添加链接，文件下载响应")
+	if request.Header == nil {
+		request.Header = http.Header{}
+	}
+	request.Header.Set("User-Agent", userAgent)
+
+	response, err := http.DefaultClient.Do(request.WithContext(ctx))
+	if err != nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加链接，http请求异常")
+		return nil, fmt.Errorf("添加链接，http请求异常: %+v", err)
+	}
+	if response == nil || response.Body == nil {
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加链接，http响应为空")
+		return nil, fmt.Errorf("添加链接，http响应为空")
+	}
+	defer response.Body.Close()
+
+	statusCode := response.StatusCode
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"statusCode": statusCode}).Info("添加链接，http响应码")
 	if statusCode != http.StatusOK {
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"StatusCode": statusCode}).Error("添加链接，文件下载响应码失败")
-		return nil, fmt.Errorf("添加链接，文件下载响应码失败: %+v", statusCode)
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"statusCode": statusCode}).Error("添加链接，http响应码失败")
+		return nil, fmt.Errorf("添加链接，http响应码失败: %+v", statusCode)
 	}
 
-	reader := response.RawBody()
-	defer reader.Close()
-	return AddFile(ctx, filePath, reader, raw)
+	return AddFile(ctx, filePath, response.Body, raw)
 }
 
 //func AddTmpFile(ctx context.Context, reader io.Reader) (*model.FileSimpleInfo, error) {
@@ -71,10 +81,11 @@ func AddFile(ctx context.Context, filePath string, reader io.Reader, raw bool) (
 
 		if !raw && err == nil && format != imaging.GIF {
 			buffer := &bytes.Buffer{}
+			reader = util.NewTimeoutReader(reader, config.Config.Timeout)
 			_, err = io.Copy(buffer, reader)
 			if err != nil {
 				logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加文件，读取图片数据异常")
-				return nil, err
+				return nil, fmt.Errorf("添加文件，读取图片数据异常: %+v", err)
 			}
 
 			imageBuffer, err := CompressionImage(ctx, buffer)

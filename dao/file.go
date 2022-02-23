@@ -18,6 +18,7 @@ func InsertFile(ctx context.Context, filePath string, reader io.Reader) (*model.
 	if err != nil {
 		return nil, err
 	}
+	reader = util.NewTimeoutReader(reader, config.Config.Timeout)
 	err = util.WriteFileWithReader(ctx, bedPath, reader)
 	if err != nil {
 		return nil, err
