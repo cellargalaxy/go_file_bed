@@ -2,15 +2,13 @@ package main
 
 import (
 	"github.com/cellargalaxy/go_common/util"
-	"github.com/cellargalaxy/go_file_bed/config"
 	"github.com/cellargalaxy/go_file_bed/controller"
 	"github.com/cellargalaxy/go_file_bed/corn"
-	"github.com/sirupsen/logrus"
+	"github.com/cellargalaxy/go_file_bed/model"
 )
 
 func init() {
-	logrus.SetLevel(config.Config.LogLevel)
-	util.InitDefaultLog()
+	util.InitDefaultLog(model.DefaultServerName)
 	corn.Init()
 }
 

@@ -20,16 +20,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	_, err = client.StartConfWithInitConf(ctx)
-	if err != nil {
-		panic(err)
-	}
+	client.StartConfWithInitConf(ctx)
 }
 
 func checkAndResetConfig(ctx context.Context, config model.Config) (model.Config, error) {
-	if config.LogLevel <= 0 || config.LogLevel > logrus.TraceLevel {
-		config.LogLevel = logrus.InfoLevel
-	}
 	if config.Timeout <= 0 {
 		config.Timeout = 3 * time.Second
 	}
@@ -83,7 +77,7 @@ func (this *ServerCenterHandler) GetSecret(ctx context.Context) string {
 	return sdk.GetEnvServerCenterSecret(ctx)
 }
 func (this *ServerCenterHandler) GetServerName(ctx context.Context) string {
-	return sdk.GetEnvServerName(ctx)
+	return sdk.GetEnvServerName(ctx, model.DefaultServerName)
 }
 func (this *ServerCenterHandler) GetInterval(ctx context.Context) time.Duration {
 	return 5 * time.Minute
@@ -100,7 +94,6 @@ func (this *ServerCenterHandler) ParseConf(ctx context.Context, object sc_model.
 		return err
 	}
 	Config = config
-	logrus.SetLevel(Config.LogLevel)
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"Config": Config}).Info("加载配置")
 	return nil
 }
@@ -108,4 +101,7 @@ func (this *ServerCenterHandler) GetDefaultConf(ctx context.Context) string {
 	var config model.Config
 	config, _ = checkAndResetConfig(ctx, config)
 	return util.ToYamlString(config)
+}
+func (this *ServerCenterHandler) GetLocalFilePath(ctx context.Context) string {
+	return ""
 }

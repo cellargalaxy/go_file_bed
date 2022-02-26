@@ -3,14 +3,14 @@ package model
 import (
 	"github.com/cellargalaxy/go_common/util"
 	"github.com/disintegration/imaging"
-	"github.com/sirupsen/logrus"
 	"time"
 )
 
 const (
-	ListenAddress = ":8880"
-	FileBedPath   = "file_bed"
-	TrashPath     = "/.trash"
+	DefaultServerName = "go_file_bed"
+	ListenAddress     = ":8880"
+	FileBedPath       = "file_bed"
+	TrashPath         = "/.trash"
 
 	FileUrl = "/file"
 
@@ -25,11 +25,10 @@ const (
 )
 
 type Config struct {
-	LogLevel logrus.Level  `yaml:"log_level" json:"log_level"`
-	Retry    int           `yaml:"retry" json:"retry"`
-	Timeout  time.Duration `yaml:"timeout" json:"timeout"`
-	Sleep    time.Duration `yaml:"sleep" json:"sleep"`
-	Secret   string        `yaml:"secret" json:"-"`
+	Retry   int           `yaml:"retry" json:"retry"`
+	Timeout time.Duration `yaml:"timeout" json:"timeout"`
+	Sleep   time.Duration `yaml:"sleep" json:"sleep"`
+	Secret  string        `yaml:"secret" json:"-"`
 
 	LastFileCount int   `yaml:"last_file_count" json:"last_file_count"`
 	MaxHashLimit  int64 `yaml:"max_hash_limit" json:"max_hash_limit"`
