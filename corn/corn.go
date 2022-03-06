@@ -58,9 +58,9 @@ func (this pushSyncFileJob) String() string {
 
 func (this *pushSyncFileJob) Run() {
 	ctx := util.CreateLogCtx()
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务开完")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"pushSyncFileJob": this}).Info("定时任务，执行任务开始")
 	service.PushSyncFile(ctx, this.Address, this.Secret, "")
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务完成")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"pushSyncFileJob": this}).Info("定时任务，执行任务完成")
 }
 
 type pullSyncFileJob struct {
@@ -74,9 +74,9 @@ func (this pullSyncFileJob) String() string {
 
 func (this *pullSyncFileJob) Run() {
 	ctx := util.CreateLogCtx()
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务开完")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"pullSyncFileJob": this}).Info("定时任务，执行任务开始")
 	service.PullSyncFile(ctx, this.Address, this.Secret, "")
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务完成")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"pullSyncFileJob": this}).Info("定时任务，执行任务完成")
 }
 
 type trashClearJob struct {
@@ -88,7 +88,7 @@ func (this trashClearJob) String() string {
 
 func (this *trashClearJob) Run() {
 	ctx := util.CreateLogCtx()
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务开完")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"trashClearJob": this}).Info("定时任务，执行任务开始")
 	service.ClearTrash(ctx)
-	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务完成")
+	logrus.WithContext(ctx).WithFields(logrus.Fields{"trashClearJob": this}).Info("定时任务，执行任务完成")
 }
