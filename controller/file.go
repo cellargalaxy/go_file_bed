@@ -15,7 +15,7 @@ func addUrl(ctx *gin.Context) {
 	err := ctx.Bind(&request)
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加链接，请求参数解析异常")
-		ctx.JSON(http.StatusOK, util.CreateErrResponse(err.Error()))
+		ctx.JSON(http.StatusOK, util.CreateResponseByErr(err))
 		return
 	}
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"request": request}).Info("添加链接")
@@ -28,7 +28,7 @@ func addFile(ctx *gin.Context) {
 	file, header, err := ctx.Request.FormFile("file")
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加文件，读取表单文件异常")
-		ctx.JSON(http.StatusOK, util.CreateErrResponse(err.Error()))
+		ctx.JSON(http.StatusOK, util.CreateResponseByErr(err))
 		return
 	}
 	defer file.Close()
@@ -42,7 +42,7 @@ func removeFile(ctx *gin.Context) {
 	err := ctx.Bind(&request)
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("删除文件，请求参数解析异常")
-		ctx.JSON(http.StatusOK, util.CreateErrResponse(err.Error()))
+		ctx.JSON(http.StatusOK, util.CreateResponseByErr(err))
 		return
 	}
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"request": request}).Info("删除文件")
@@ -54,7 +54,7 @@ func getFileCompleteInfo(ctx *gin.Context) {
 	err := ctx.Bind(&request)
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件完整信息，请求参数解析异常")
-		ctx.JSON(http.StatusOK, util.CreateErrResponse(err.Error()))
+		ctx.JSON(http.StatusOK, util.CreateResponseByErr(err))
 		return
 	}
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"request": request}).Info("查询文件完整信息")
@@ -66,7 +66,7 @@ func listFileSimpleInfo(ctx *gin.Context) {
 	err := ctx.Bind(&request)
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件简单信息，请求参数解析异常")
-		ctx.JSON(http.StatusOK, util.CreateErrResponse(err.Error()))
+		ctx.JSON(http.StatusOK, util.CreateResponseByErr(err))
 		return
 	}
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"request": request}).Info("查询文件简单信息")
@@ -78,7 +78,7 @@ func listLastFileInfo(ctx *gin.Context) {
 	err := ctx.Bind(&request)
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询最近文件信息，请求参数解析异常")
-		ctx.JSON(http.StatusOK, util.CreateErrResponse(err.Error()))
+		ctx.JSON(http.StatusOK, util.CreateResponseByErr(err))
 		return
 	}
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"request": request}).Info("查询最近文件信息")

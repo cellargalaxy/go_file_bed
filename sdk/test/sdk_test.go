@@ -13,8 +13,8 @@ const (
 )
 
 func TestAddFile(test *testing.T) {
-	ctx := util.CreateLogCtx()
-	client, err := sdk.NewDefaultFileBedClient(address, secret)
+	ctx := util.GenCtx()
+	client, err := sdk.NewDefaultFileBedClient(ctx, address, secret)
 	if err != nil {
 		test.Error(err)
 		test.FailNow()
@@ -34,8 +34,8 @@ func TestAddFile(test *testing.T) {
 }
 
 func TestGetFileCompleteInfo(test *testing.T) {
-	ctx := util.CreateLogCtx()
-	client, err := sdk.NewDefaultFileBedClient(address, secret)
+	ctx := util.GenCtx()
+	client, err := sdk.NewDefaultFileBedClient(ctx, address, secret)
 	if err != nil {
 		test.Error(err)
 		test.FailNow()
@@ -51,8 +51,8 @@ func TestGetFileCompleteInfo(test *testing.T) {
 }
 
 func TestListFileSimpleInfo(test *testing.T) {
-	ctx := util.CreateLogCtx()
-	client, err := sdk.NewDefaultFileBedClient(address, secret)
+	ctx := util.GenCtx()
+	client, err := sdk.NewDefaultFileBedClient(ctx, address, secret)
 	if err != nil {
 		test.Error(err)
 		test.FailNow()

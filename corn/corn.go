@@ -1,6 +1,7 @@
 package corn
 
 import (
+	"context"
 	"github.com/cellargalaxy/go_common/util"
 	"github.com/cellargalaxy/go_file_bed/config"
 	"github.com/cellargalaxy/go_file_bed/service"
@@ -8,8 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Init() {
-	ctx := util.CreateLogCtx()
+func Init(ctx context.Context) {
 	cronObject := cron.New()
 
 	if config.Config.PullSyncCron != "" {
@@ -20,7 +20,7 @@ func Init() {
 		if err != nil {
 			panic(err)
 		}
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": job, "entryId": entryId}).Info("定时任务，添加定时")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"pullSyncFileJob": job, "entryId": entryId}).Info("定时任务，添加定时")
 	}
 
 	if config.Config.PushSyncCron != "" {
@@ -31,7 +31,7 @@ func Init() {
 		if err != nil {
 			panic(err)
 		}
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": job, "entryId": entryId}).Info("定时任务，添加定时")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"pushSyncFileJob": job, "entryId": entryId}).Info("定时任务，添加定时")
 	}
 
 	if config.Config.TrashClearCron != "" {
@@ -40,7 +40,7 @@ func Init() {
 		if err != nil {
 			panic(err)
 		}
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": job, "entryId": entryId}).Info("定时任务，添加定时")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"trashClearJob": job, "entryId": entryId}).Info("定时任务，添加定时")
 	}
 
 	cronObject.Start()
@@ -57,7 +57,7 @@ func (this pushSyncFileJob) String() string {
 }
 
 func (this *pushSyncFileJob) Run() {
-	ctx := util.CreateLogCtx()
+	ctx := util.GenCtx()
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务开完")
 	service.PushSyncFile(ctx, this.Address, this.Secret, "")
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务完成")
@@ -73,7 +73,7 @@ func (this pullSyncFileJob) String() string {
 }
 
 func (this *pullSyncFileJob) Run() {
-	ctx := util.CreateLogCtx()
+	ctx := util.GenCtx()
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务开完")
 	service.PullSyncFile(ctx, this.Address, this.Secret, "")
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务完成")
@@ -87,7 +87,7 @@ func (this trashClearJob) String() string {
 }
 
 func (this *trashClearJob) Run() {
-	ctx := util.CreateLogCtx()
+	ctx := util.GenCtx()
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务开完")
 	service.ClearTrash(ctx)
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"corn": this}).Info("定时任务，执行任务完成")

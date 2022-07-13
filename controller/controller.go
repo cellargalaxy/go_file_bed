@@ -12,7 +12,7 @@ import (
 
 func Controller() error {
 	engine := gin.Default()
-	engine.Use(util.GinLogId)
+	engine.Use(claims)
 	engine.Use(util.GinLog)
 	engine.GET("/ping", util.Ping)
 	engine.POST("/ping", validate, util.Ping)

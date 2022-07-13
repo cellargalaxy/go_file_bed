@@ -2,10 +2,7 @@ package sdk
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"github.com/cellargalaxy/go_common/consd"
-	common_model "github.com/cellargalaxy/go_common/model"
 	"github.com/cellargalaxy/go_common/util"
 	"github.com/cellargalaxy/go_file_bed/model"
 	"github.com/go-resty/resty/v2"
@@ -18,6 +15,11 @@ import (
 	"time"
 )
 
+type FileBedHandlerInter interface {
+	ListAddress(ctx context.Context) []string
+	GetSecret(ctx context.Context) string
+}
+
 type FileBedHandler struct {
 	Address string `json:"address"`
 	Secret  string `json:"-"`
@@ -27,86 +29,46 @@ func (this FileBedHandler) String() string {
 	return util.ToJsonString(this)
 }
 
-func (this FileBedHandler) GetAddress(ctx context.Context) string {
-	if strings.HasSuffix(this.Address, "/") {
-		return this.Address[:len(this.Address)-1]
+func (this FileBedHandler) ListAddress(ctx context.Context) []string {
+	address := this.Address
+	if strings.HasSuffix(address, "/") {
+		address = address[:len(address)-1]
+		this.Address = address
 	}
-	return this.Address
+	return []string{address}
 }
 func (this FileBedHandler) GetSecret(ctx context.Context) string {
 	return this.Secret
 }
 
 type FileBedClient struct {
-	retry      int
-	handler    model.FileBedHandlerInter
-	httpClient *resty.Client
+	timeout        time.Duration
+	retry          int
+	httpClient     *resty.Client
+	httpClientLong *resty.Client
+	handler        FileBedHandlerInter
 }
 
-func NewDefaultFileBedClient(address, secret string) (*FileBedClient, error) {
-	return NewFileBedClient(time.Hour, 3*time.Second, 3, &FileBedHandler{Address: address, Secret: secret})
+func NewDefaultFileBedClient(ctx context.Context, address, secret string) (*FileBedClient, error) {
+	httpClientLong := util.CreateNotRetryHttpClient(time.Hour)
+	return NewFileBedClient(ctx, util.TimeoutDefault, util.RetryDefault, util.GetHttpClient(), httpClientLong, &FileBedHandler{Address: address, Secret: secret})
 }
 
-func NewFileBedClient(timeout, sleep time.Duration, retry int, handler model.FileBedHandlerInter) (*FileBedClient, error) {
+func NewFileBedClient(ctx context.Context, timeout time.Duration, retry int, httpClient, httpClientLong *resty.Client, handler FileBedHandlerInter) (*FileBedClient, error) {
 	if handler == nil {
-		return nil, fmt.Errorf("FileBedHandlerInter为空")
+		logrus.WithContext(ctx).WithFields(logrus.Fields{}).Error("创建FileBedClient，FileBedHandlerInter为空")
+		return nil, fmt.Errorf("创建FileBedClient，FileBedHandlerInter为空")
 	}
-	httpClient := createHttpClient(timeout, sleep, retry)
-	return &FileBedClient{retry: retry, handler: handler, httpClient: httpClient}, nil
+	return &FileBedClient{timeout: timeout, retry: retry, handler: handler, httpClient: httpClient, httpClientLong: httpClientLong}, nil
 }
 
-func createHttpClient(timeout, sleep time.Duration, retry int) *resty.Client {
-	httpClient := resty.New().
-		SetTimeout(timeout).
-		SetRetryCount(retry).
-		SetRetryWaitTime(sleep).
-		SetRetryMaxWaitTime(5 * time.Minute).
-		AddRetryCondition(func(response *resty.Response, err error) bool {
-			ctx := util.CreateLogCtx()
-			if response != nil && response.Request != nil {
-				ctx = response.Request.Context()
-			}
-			var statusCode int
-			if response != nil {
-				statusCode = response.StatusCode()
-			}
-			retry := statusCode != http.StatusOK || err != nil
-			if retry {
-				logrus.WithContext(ctx).WithFields(logrus.Fields{"statusCode": statusCode, "err": err}).Warn("HTTP请求异常，进行重试")
-			}
-			return retry
-		}).
-		SetRetryAfter(func(client *resty.Client, response *resty.Response) (time.Duration, error) {
-			ctx := util.CreateLogCtx()
-			if response != nil && response.Request != nil {
-				ctx = response.Request.Context()
-			}
-			var attempt int
-			if response != nil && response.Request != nil {
-				attempt = response.Request.Attempt
-			}
-			if attempt > retry {
-				logrus.WithContext(ctx).WithFields(logrus.Fields{"attempt": attempt}).Error("HTTP请求异常，超过最大重试次数")
-				return 0, fmt.Errorf("HTTP请求异常，超过最大重试次数")
-			}
-			duration := util.WareDuration(sleep)
-			for i := 0; i < attempt-1; i++ {
-				duration *= 10
-			}
-			logrus.WithContext(ctx).WithFields(logrus.Fields{"attempt": attempt, "duration": duration}).Warn("HTTP请求异常，休眠重试")
-			return duration, nil
-		}).
-		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-	return httpClient
-}
-
-func (this FileBedClient) DownloadFile(ctx context.Context, filePath string, writer io.Writer) error {
+func (this *FileBedClient) DownloadFile(ctx context.Context, filePath string, writer io.Writer) error {
 	url, err := this.GetFileDownloadUrl(ctx, filePath)
 	if err != nil {
 		return err
 	}
 
-	response, err := this.httpClient.R().SetContext(ctx).
+	response, err := this.httpClientLong.R().SetContext(ctx).
 		SetDoNotParseResponse(true).
 		Get(url)
 
@@ -137,8 +99,8 @@ func (this FileBedClient) DownloadFile(ctx context.Context, filePath string, wri
 	return nil
 }
 
-func (this FileBedClient) GetFileDownloadUrl(ctx context.Context, filePath string) (string, error) {
-	url := this.handler.GetAddress(ctx)
+func (this *FileBedClient) GetFileDownloadUrl(ctx context.Context, filePath string) (string, error) {
+	url := this.getAddress(ctx)
 	if strings.HasSuffix(url, "/") {
 		url = url[:len(url)-1]
 	}
@@ -147,16 +109,12 @@ func (this FileBedClient) GetFileDownloadUrl(ctx context.Context, filePath strin
 	return url, nil
 }
 
-func (this FileBedClient) AddFile(ctx context.Context, filePath string, reader io.Reader, raw bool) (*model.FileSimpleInfo, error) {
+func (this *FileBedClient) AddFile(ctx context.Context, filePath string, reader io.Reader, raw bool) (*model.FileSimpleInfo, error) {
 	var jsonString string
 	var object *model.FileAddResponse
 	var err error
 	for i := 0; i < this.retry; i++ {
-		jwtToken, err := this.genJWT(ctx)
-		if err != nil {
-			return nil, err
-		}
-		jsonString, err = this.requestAddFile(ctx, jwtToken, filePath, reader, raw)
+		jsonString, err = this.requestAddFile(ctx, filePath, reader, raw)
 		if err == nil {
 			object, err = this.parseAddFile(ctx, jsonString)
 			if object != nil && err == nil {
@@ -166,8 +124,7 @@ func (this FileBedClient) AddFile(ctx context.Context, filePath string, reader i
 	}
 	return nil, err
 }
-
-func (this FileBedClient) parseAddFile(ctx context.Context, jsonString string) (*model.FileAddResponse, error) {
+func (this *FileBedClient) parseAddFile(ctx context.Context, jsonString string) (*model.FileAddResponse, error) {
 	type Response struct {
 		Code int                   `json:"code"`
 		Msg  string                `json:"msg"`
@@ -179,23 +136,21 @@ func (this FileBedClient) parseAddFile(ctx context.Context, jsonString string) (
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加文件，解析响应异常")
 		return nil, fmt.Errorf("添加文件，解析响应异常")
 	}
-	if response.Code != consd.HttpSuccessCode {
+	if response.Code != util.HttpSuccessCode {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"code": response.Code, "msg": response.Msg}).Error("添加文件，失败")
 		return nil, fmt.Errorf("添加文件，失败")
 	}
 	return &response.Data, nil
 }
-
-func (this FileBedClient) requestAddFile(ctx context.Context, jwtToken string, filePath string, reader io.Reader, raw bool) (string, error) {
+func (this *FileBedClient) requestAddFile(ctx context.Context, filePath string, reader io.Reader, raw bool) (string, error) {
 	response, err := this.httpClient.R().SetContext(ctx).
-		SetHeader("Authorization", "Bearer "+jwtToken).
-		SetHeader(util.LogIdKey, fmt.Sprint(util.GetLogId(ctx))).
+		SetHeader(this.genJWT(ctx)).
 		SetFileReader("file", filePath, reader).
 		SetFormData(map[string]string{
 			"path": filePath,
 			"raw":  strconv.FormatBool(raw),
 		}).
-		Post(this.handler.GetAddress(ctx) + model.AddFileUrl)
+		Post(this.GetUrl(ctx, model.AddFileUrl))
 
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("添加文件，请求异常")
@@ -215,16 +170,12 @@ func (this FileBedClient) requestAddFile(ctx context.Context, jwtToken string, f
 	return body, nil
 }
 
-func (this FileBedClient) GetFileCompleteInfo(ctx context.Context, request model.FileCompleteInfoGetRequest) (*model.FileCompleteInfo, error) {
+func (this *FileBedClient) GetFileCompleteInfo(ctx context.Context, request model.FileCompleteInfoGetRequest) (*model.FileCompleteInfo, error) {
 	var jsonString string
 	var object *model.FileCompleteInfoGetResponse
 	var err error
 	for i := 0; i < this.retry; i++ {
-		jwtToken, err := this.genJWT(ctx)
-		if err != nil {
-			return nil, err
-		}
-		jsonString, err = this.requestGetFileCompleteInfo(ctx, jwtToken, request)
+		jsonString, err = this.requestGetFileCompleteInfo(ctx, request)
 		if err == nil {
 			object, err = this.parseGetFileCompleteInfo(ctx, jsonString)
 			if object != nil && err == nil {
@@ -234,8 +185,7 @@ func (this FileBedClient) GetFileCompleteInfo(ctx context.Context, request model
 	}
 	return nil, err
 }
-
-func (this FileBedClient) parseGetFileCompleteInfo(ctx context.Context, jsonString string) (*model.FileCompleteInfoGetResponse, error) {
+func (this *FileBedClient) parseGetFileCompleteInfo(ctx context.Context, jsonString string) (*model.FileCompleteInfoGetResponse, error) {
 	type Response struct {
 		Code int                               `json:"code"`
 		Msg  string                            `json:"msg"`
@@ -247,19 +197,17 @@ func (this FileBedClient) parseGetFileCompleteInfo(ctx context.Context, jsonStri
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件完整信息，解析响应异常")
 		return nil, fmt.Errorf("查询文件完整信息，解析响应异常")
 	}
-	if response.Code != consd.HttpSuccessCode {
+	if response.Code != util.HttpSuccessCode {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"code": response.Code, "msg": response.Msg}).Error("查询文件完整信息，失败")
 		return nil, fmt.Errorf("查询文件完整信息，失败")
 	}
 	return &response.Data, nil
 }
-
-func (this FileBedClient) requestGetFileCompleteInfo(ctx context.Context, jwtToken string, request model.FileCompleteInfoGetRequest) (string, error) {
+func (this *FileBedClient) requestGetFileCompleteInfo(ctx context.Context, request model.FileCompleteInfoGetRequest) (string, error) {
 	response, err := this.httpClient.R().SetContext(ctx).
-		SetHeader("Authorization", "Bearer "+jwtToken).
-		SetHeader(util.LogIdKey, fmt.Sprint(util.GetLogId(ctx))).
+		SetHeader(this.genJWT(ctx)).
 		SetQueryParam("path", request.Path).
-		Get(this.handler.GetAddress(ctx) + model.GetFileCompleteInfoUrl)
+		Get(this.GetUrl(ctx, model.GetFileCompleteInfoUrl))
 
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件完整信息，请求异常")
@@ -279,16 +227,12 @@ func (this FileBedClient) requestGetFileCompleteInfo(ctx context.Context, jwtTok
 	return body, nil
 }
 
-func (this FileBedClient) ListFileSimpleInfo(ctx context.Context, request model.FileSimpleInfoListRequest) ([]model.FileSimpleInfo, error) {
+func (this *FileBedClient) ListFileSimpleInfo(ctx context.Context, request model.FileSimpleInfoListRequest) ([]model.FileSimpleInfo, error) {
 	var jsonString string
 	var object *model.FileSimpleInfoListResponse
 	var err error
 	for i := 0; i < this.retry; i++ {
-		jwtToken, err := this.genJWT(ctx)
-		if err != nil {
-			return nil, err
-		}
-		jsonString, err = this.requestListFileSimpleInfo(ctx, jwtToken, request)
+		jsonString, err = this.requestListFileSimpleInfo(ctx, request)
 		if err == nil {
 			object, err = this.parseListFileSimpleInfo(ctx, jsonString)
 			if object != nil && err == nil {
@@ -298,8 +242,7 @@ func (this FileBedClient) ListFileSimpleInfo(ctx context.Context, request model.
 	}
 	return nil, err
 }
-
-func (this FileBedClient) parseListFileSimpleInfo(ctx context.Context, jsonString string) (*model.FileSimpleInfoListResponse, error) {
+func (this *FileBedClient) parseListFileSimpleInfo(ctx context.Context, jsonString string) (*model.FileSimpleInfoListResponse, error) {
 	type Response struct {
 		Code int                              `json:"code"`
 		Msg  string                           `json:"msg"`
@@ -311,19 +254,17 @@ func (this FileBedClient) parseListFileSimpleInfo(ctx context.Context, jsonStrin
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件简单信息，解析响应异常")
 		return nil, fmt.Errorf("查询文件简单信息，解析响应异常")
 	}
-	if response.Code != consd.HttpSuccessCode {
+	if response.Code != util.HttpSuccessCode {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"code": response.Code, "msg": response.Msg}).Error("查询文件简单信息，失败")
 		return nil, fmt.Errorf("查询文件简单信息，失败")
 	}
 	return &response.Data, nil
 }
-
-func (this FileBedClient) requestListFileSimpleInfo(ctx context.Context, jwtToken string, request model.FileSimpleInfoListRequest) (string, error) {
+func (this *FileBedClient) requestListFileSimpleInfo(ctx context.Context, request model.FileSimpleInfoListRequest) (string, error) {
 	response, err := this.httpClient.R().SetContext(ctx).
-		SetHeader("Authorization", "Bearer "+jwtToken).
-		SetHeader(util.LogIdKey, fmt.Sprint(util.GetLogId(ctx))).
+		SetHeader(this.genJWT(ctx)).
 		SetQueryParam("path", request.Path).
-		Get(this.handler.GetAddress(ctx) + model.ListFileSimpleInfoUrl)
+		Get(this.GetUrl(ctx, model.ListFileSimpleInfoUrl))
 
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("查询文件简单信息，请求异常")
@@ -343,13 +284,24 @@ func (this FileBedClient) requestListFileSimpleInfo(ctx context.Context, jwtToke
 	return body, nil
 }
 
-func (this FileBedClient) genJWT(ctx context.Context) (string, error) {
-	now := time.Now()
-	var claims common_model.Claims
-	claims.CreateTime = now.Unix()
-	claims.IssuedAt = now.Unix() - int64(this.retry*60)
-	claims.ExpiresAt = now.Unix() + int64(this.retry*60)
-	claims.RequestId = fmt.Sprint(util.GenId())
-	jwtToken, err := util.GenJWT(ctx, this.handler.GetSecret(ctx), claims)
-	return jwtToken, err
+func (this *FileBedClient) GetUrl(ctx context.Context, path string) string {
+	return this.getUrl(ctx, this.getAddress(ctx), path)
+}
+func (this *FileBedClient) getUrl(ctx context.Context, address, path string) string {
+	if strings.HasSuffix(address, "/") && strings.HasPrefix(path, "/") && len(path) > 0 {
+		path = path[1:]
+	}
+	return address + path
+}
+func (this *FileBedClient) getAddress(ctx context.Context) string {
+	list := this.handler.ListAddress(ctx)
+	if len(list) == 0 {
+		return ""
+	}
+	logId := util.GetLogId(ctx)
+	index := int(logId) % len(list)
+	return list[index]
+}
+func (this *FileBedClient) genJWT(ctx context.Context) (string, string) {
+	return util.GenAuthorizationJWT(ctx, this.timeout, this.handler.GetSecret(ctx))
 }

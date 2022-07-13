@@ -8,7 +8,7 @@ package test
 //)
 //
 //func TestFrpPull(test *testing.T) {
-//	ctx := util.CreateLogCtx()
+//	ctx := util.GenCtx()
 //	err := service.FrpPull(ctx, "http://192.168.123.5:7090", "admin", "", "", "")
 //	if err != nil {
 //		test.Error(err)

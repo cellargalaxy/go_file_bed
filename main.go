@@ -8,8 +8,9 @@ import (
 )
 
 func init() {
-	util.InitDefaultLog(model.DefaultServerName)
-	corn.Init()
+	ctx := util.GenCtx()
+	util.Init(model.DefaultServerName)
+	corn.Init(ctx)
 }
 
 /**

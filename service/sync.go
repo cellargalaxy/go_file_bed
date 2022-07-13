@@ -12,7 +12,7 @@ import (
 )
 
 func PushSyncFile(ctx context.Context, address, secret, path string) error {
-	client, err := NewFileSyncClient(address, secret)
+	client, err := NewFileSyncClient(ctx, address, secret)
 	if err != nil {
 		return err
 	}
@@ -20,15 +20,15 @@ func PushSyncFile(ctx context.Context, address, secret, path string) error {
 }
 
 func PullSyncFile(ctx context.Context, address, secret, path string) error {
-	client, err := NewFileSyncClient(address, secret)
+	client, err := NewFileSyncClient(ctx, address, secret)
 	if err != nil {
 		return err
 	}
 	return client.Pull(ctx, path, path)
 }
 
-func NewFileSyncClient(address, secret string) (model.FileSyncInter, error) {
-	client, err := sdk.NewDefaultFileBedClient(address, secret)
+func NewFileSyncClient(ctx context.Context, address, secret string) (model.FileSyncInter, error) {
+	client, err := sdk.NewDefaultFileBedClient(ctx, address, secret)
 	if err != nil {
 		return nil, err
 	}

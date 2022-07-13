@@ -7,7 +7,7 @@ import (
 )
 
 func TestPushFile(test *testing.T) {
-	ctx := util.CreateLogCtx()
+	ctx := util.GenCtx()
 	err := service.PushSyncFile(ctx, "http://127.0.0.1:8880/", "secret", "")
 	if err != nil {
 		test.Error(err)
@@ -16,7 +16,7 @@ func TestPushFile(test *testing.T) {
 }
 
 func TestPullFile(test *testing.T) {
-	ctx := util.CreateLogCtx()
+	ctx := util.GenCtx()
 	err := service.PullSyncFile(ctx, "http://127.0.0.1:8880/", "secret", "")
 	if err != nil {
 		test.Error(err)

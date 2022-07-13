@@ -5,7 +5,7 @@ import (
 )
 
 func TestTest(test *testing.T) {
-	//ctx := util.CreateLogCtx()
+	//ctx := util.GenCtx()
 	//
 	//fmt.Println(service.ParseTrashPath(ctx,"/aaa/bbb/ccc"))
 }

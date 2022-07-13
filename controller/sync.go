@@ -14,7 +14,7 @@ func pushSyncFile(ctx *gin.Context) {
 	err := ctx.Bind(&request)
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("push同步文件，请求参数解析异常")
-		ctx.JSON(http.StatusOK, util.CreateErrResponse(err.Error()))
+		ctx.JSON(http.StatusOK, util.CreateResponseByErr(err))
 		return
 	}
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"address": request.Address, "path": request.Path}).Info("push同步文件")
@@ -26,7 +26,7 @@ func pullSyncFile(ctx *gin.Context) {
 	err := ctx.Bind(&request)
 	if err != nil {
 		logrus.WithContext(ctx).WithFields(logrus.Fields{"err": err}).Error("pull同步文件，请求参数解析异常")
-		ctx.JSON(http.StatusOK, util.CreateErrResponse(err.Error()))
+		ctx.JSON(http.StatusOK, util.CreateResponseByErr(err))
 		return
 	}
 	logrus.WithContext(ctx).WithFields(logrus.Fields{"address": request.Address, "path": request.Path}).Info("pull同步文件")
