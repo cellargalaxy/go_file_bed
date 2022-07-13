@@ -405,7 +405,7 @@
                 this.infos = initFileInfos(infos)
             },
             openFile(info) {
-                window.open('../../..' + info.url)
+                window.open(window.location.pathname + '/../../..' + info.url)
             },
             async getFileCompleteInfo(info) {
                 info.loading = true
@@ -505,7 +505,7 @@
             },
             openFile(info) {
                 if (info.is_file) {
-                    window.open('../../..' + info.url)
+                    window.open(window.location.pathname + '/../../..' + info.url)
                     return
                 }
                 this.goFolderPath(info.path)
