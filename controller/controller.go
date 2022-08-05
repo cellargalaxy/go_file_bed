@@ -5,6 +5,7 @@ import (
 	"github.com/cellargalaxy/go_common/util"
 	"github.com/cellargalaxy/go_file_bed/model"
 	"github.com/cellargalaxy/go_file_bed/static"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
@@ -14,6 +15,10 @@ func Controller() error {
 	engine := gin.Default()
 	engine.Use(claims)
 	engine.Use(util.GinLog)
+
+	debug := engine.Group(util.DebugPath, validate)
+	pprof.RouteRegister(debug, util.PprofPath)
+
 	engine.GET("/ping", util.Ping)
 	engine.POST("/ping", validate, util.Ping)
 
