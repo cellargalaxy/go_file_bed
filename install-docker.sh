@@ -51,7 +51,8 @@ docker run -d \
   --restart=always \
   --name $server_name \
   -v log:/log \
-  -v file_bed_data:/file_bed \
+  -v $server_name'_resource':/resource \
+  -v $server_name'_file_bed':/file_bed \
   -p $listen_port:8880 \
   -e server_name=$server_name \
   -e server_center_address=$server_center_address \
